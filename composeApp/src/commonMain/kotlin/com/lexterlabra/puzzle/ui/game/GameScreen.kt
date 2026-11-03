@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Landscape
 import androidx.compose.material.icons.rounded.PhotoCamera
@@ -130,7 +132,7 @@ fun GameScreen(viewModel: GameViewModel, settings: SettingsStore, onBack: () -> 
                 } else {
                     Row(horizontalArrangement = Arrangement.spacedBy(28.dp)) {
                         Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) { board(Modifier) }
-                        Column(Modifier.width(360.dp), verticalArrangement = Arrangement.spacedBy(16.dp), content = controls)
+                        Column(Modifier.width(360.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp), content = controls)
                     }
                 }
             }

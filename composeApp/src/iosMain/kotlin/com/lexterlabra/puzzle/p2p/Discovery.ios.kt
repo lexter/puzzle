@@ -4,6 +4,8 @@ import kotlinx.cinterop.ObjCSignatureOverride
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import com.lexterlabra.puzzle.platform.toByteArray
+import platform.Foundation.NSData
 import platform.Foundation.NSNetService
 import platform.Foundation.NSNetServiceBrowser
 import platform.Foundation.NSNetServiceBrowserDelegateProtocol
@@ -33,7 +35,7 @@ actual class Discovery actual constructor() {
         val found = linkedMapOf<String, FoundHost>()
 
         val resolver = ResolveDelegate { service ->
-            val host = service.hostName ?: return@ResolveDelegate
+            val host = ipv4Of(service) ?: service.hostName ?: return@ResolveDelegate
             found[service.name] = FoundHost(service.name, service.name, host, service.port.toInt())
             trySend(found.values.toList())
         }
@@ -58,6 +60,22 @@ actual class Discovery actual constructor() {
             delegate.hashCode(); resolver.hashCode()
         }
     }
+}
+
+private const val AF_INET = 2
+
+/**
+ * Hosts listen on IPv4 only, but a `.local` name can resolve to IPv6 first, so dial the
+ * IPv4 address from the resolved sockaddrs (Darwin sockaddr_in: len, family, port, addr).
+ */
+private fun ipv4Of(service: NSNetService): String? {
+    service.addresses?.forEach { item ->
+        val bytes = (item as? NSData)?.toByteArray() ?: return@forEach
+        if (bytes.size >= 8 && bytes[1].toInt() == AF_INET) {
+            return (4..7).joinToString(".") { (bytes[it].toInt() and 0xFF).toString() }
+        }
+    }
+    return null
 }
 
 private class BrowserDelegate(

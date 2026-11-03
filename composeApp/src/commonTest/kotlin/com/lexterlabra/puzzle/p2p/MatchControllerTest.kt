@@ -127,6 +127,16 @@ class MatchControllerTest {
     }
 
     @Test
+    fun guestCannotMoveAfterSolving() = runTest {
+        val (_, guest) = raceStarted()
+        guest.debugSetBoard(PuzzleEngine.slide(PuzzleEngine.solved(4), 14))
+        guest.tapTile(15)
+        val solved = guest.state.value.me
+        guest.tapTile(12)
+        assertEquals(solved, guest.state.value.me)
+    }
+
+    @Test
     fun silenceMeansDisconnected() = runTest {
         val (hostEnd, guestEnd) = FakeConnection.pair()
         val host = MatchController(Role.HOST, hostEnd, "Host", "android", backgroundScope, { testScheduler.currentTime }, { true })

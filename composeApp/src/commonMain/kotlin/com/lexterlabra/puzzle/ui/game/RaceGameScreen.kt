@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -68,6 +70,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 const val MIRROR_ALPHA = 0.7f
+private val MIRROR_MAX_SIDE_PANEL = 200.dp
 
 /** Peer-to-peer race. [onLeave] must end the match (MatchHub.end) and navigate away. */
 @Composable
@@ -85,8 +88,8 @@ fun RaceGameScreen(controller: MatchController, settings: SettingsStore, onLeave
     val peer = match.peerName ?: "Opponent"
     val timed = config?.mode != Mode.FREE
 
-    val elapsed by produceState(0L, match.phase) {
-        while (match.phase == MatchPhase.RACING || match.phase == MatchPhase.SOLO) {
+    val elapsed by produceState(0L, match.phase, match.mySolvedMs) {
+        while ((match.phase == MatchPhase.RACING || match.phase == MatchPhase.SOLO) && match.mySolvedMs == null) {
             value = controller.elapsedNow()
             delay(100)
         }
@@ -120,7 +123,7 @@ fun RaceGameScreen(controller: MatchController, settings: SettingsStore, onLeave
                             myBoard, image,
                             onTileTap = { haptics.tap(); controller.tapTile(it) },
                             modifier = Modifier.padding(12.dp),
-                            interactive = match.phase == MatchPhase.RACING || match.phase == MatchPhase.SOLO,
+                            interactive = (match.phase == MatchPhase.RACING || match.phase == MatchPhase.SOLO) && match.mySolvedMs == null,
                         )
                     }
                 }
@@ -141,8 +144,8 @@ fun RaceGameScreen(controller: MatchController, settings: SettingsStore, onLeave
                 } else {
                     Row(horizontalArrangement = Arrangement.spacedBy(28.dp)) {
                         Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) { myBoardView(Modifier) }
-                        Column(Modifier.width(360.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            OpponentMirror(theirBoard, image, peer, Modifier.fillMaxWidth())
+                        Column(Modifier.width(360.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            OpponentMirror(theirBoard, image, peer, Modifier.widthIn(max = MIRROR_MAX_SIDE_PANEL).align(Alignment.CenterHorizontally))
                             side()
                         }
                     }

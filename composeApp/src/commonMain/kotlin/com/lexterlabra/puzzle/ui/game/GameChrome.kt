@@ -10,6 +10,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -135,6 +140,7 @@ fun SettingsSheet(
         ) {
             GlassSurface(
                 Modifier
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
                     .widthIn(max = 560.dp)
                     .fillMaxWidth()
                     .padding(8.dp)
@@ -143,7 +149,10 @@ fun SettingsSheet(
                 shape = RoundedCornerShape(34.dp),
                 solid = true,
             ) {
-                Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                Column(
+                    Modifier.verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(18.dp),
+                ) {
                     Box(Modifier.align(Alignment.CenterHorizontally).size(40.dp, 5.dp).clip(RoundedCornerShape(3.dp)).background(palette.track))
                     Text("Game settings", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = palette.text)
 

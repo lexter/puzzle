@@ -6,6 +6,8 @@ import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.net.wifi.WifiManager
+import android.os.Build
+import java.net.Inet4Address
 import com.lexterlabra.puzzle.platform.AndroidAppContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
@@ -14,6 +16,12 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
+
+/** Hosts listen on IPv4, so dial an IPv4 address when NSD offers one. */
+private fun ipv4Of(info: NsdServiceInfo): String? {
+    val candidates = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) info.hostAddresses else listOfNotNull(info.host)
+    return candidates.firstOrNull { it is Inet4Address }?.hostAddress
+}
 
 actual class Discovery actual constructor() {
     private val context = AndroidAppContext.get()
@@ -84,7 +92,7 @@ actual class Discovery actual constructor() {
             }
 
             override fun onServiceResolved(info: NsdServiceInfo) {
-                val address = info.host?.hostAddress
+                val address = ipv4Of(info) ?: info.host?.hostAddress
                 if (cont.isActive) cont.resume(address?.let { FoundHost(info.serviceName, info.serviceName, it, info.port) })
             }
         })

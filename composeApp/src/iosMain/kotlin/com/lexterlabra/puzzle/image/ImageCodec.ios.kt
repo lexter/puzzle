@@ -29,9 +29,11 @@ actual object ImageCodec {
         val targetWidth = width * scale
         val targetHeight = height * scale
         val format = UIGraphicsImageRendererFormat.defaultFormat().apply { this.scale = 1.0 }
+        // iOS 15+: decode straight to a small bitmap so 48 MP photos never fully decode in memory.
+        val small = source.imageByPreparingThumbnailOfSize(CGSizeMake(targetWidth, targetHeight)) ?: source
         val renderer = UIGraphicsImageRenderer(size = CGSizeMake(targetWidth, targetHeight), format = format)
         val upright = renderer.imageWithActions { _ ->
-            source.drawInRect(CGRectMake(0.0, 0.0, targetWidth, targetHeight))
+            small.drawInRect(CGRectMake(0.0, 0.0, targetWidth, targetHeight))
         }
         val jpeg = UIImageJPEGRepresentation(upright, 0.95) ?: return null
         return runCatching { Image.makeFromEncoded(jpeg.toByteArray()).toComposeImageBitmap() }.getOrNull()

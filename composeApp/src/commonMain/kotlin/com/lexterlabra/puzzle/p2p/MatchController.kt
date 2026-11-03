@@ -100,7 +100,7 @@ class MatchController(
     }
 
     /** Race stopwatch for the UI. */
-    fun elapsedNow(): Long = _state.value.raceStartedAt?.let { now() - it } ?: 0L
+    fun elapsedNow(): Long = _state.value.let { s -> s.mySolvedMs ?: s.raceStartedAt?.let { now() - it } ?: 0L }
 
     fun millisUntilStart(): Long = (_state.value.countdownEndsAt?.minus(now()) ?: 0L).coerceAtLeast(0L)
 
@@ -133,6 +133,7 @@ class MatchController(
     fun tapTile(tileId: Int) {
         val current = _state.value
         if (current.phase != MatchPhase.RACING && current.phase != MatchPhase.SOLO) return
+        if (current.mySolvedMs != null) return // solved: waiting for the host's Result
         val board = current.me ?: return
         val next = PuzzleEngine.slideTile(board, tileId)
         if (next === board) return
