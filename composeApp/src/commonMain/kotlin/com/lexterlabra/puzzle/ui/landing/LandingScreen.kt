@@ -1,124 +1,216 @@
 package com.lexterlabra.puzzle.ui.landing
 
-import androidx.compose.foundation.clickable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.border
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AllInclusive
 import androidx.compose.material.icons.rounded.EmojiEvents
-import androidx.compose.material.icons.rounded.Group
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.PhotoCamera
+import androidx.compose.material.icons.rounded.PhotoLibrary
 import androidx.compose.material.icons.rounded.Timer
-import androidx.compose.material3.Icon
+import androidx.compose.material.icons.rounded.Wifi
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lexterlabra.puzzle.APP_NAME
 import com.lexterlabra.puzzle.game.Mode
 import com.lexterlabra.puzzle.game.Players
-import com.lexterlabra.puzzle.game.PuzzleEngine
+import com.lexterlabra.puzzle.game.PuzzleState
 import com.lexterlabra.puzzle.glass.GlassSurface
 import com.lexterlabra.puzzle.ui.board.BoardView
+import com.lexterlabra.puzzle.ui.components.GlassButton
 import com.lexterlabra.puzzle.ui.components.GlassIconButton
 import com.lexterlabra.puzzle.ui.components.PrimaryButton
 import com.lexterlabra.puzzle.ui.components.ScreenScaffold
-import com.lexterlabra.puzzle.ui.components.SectionLabel
 import com.lexterlabra.puzzle.ui.components.Segment
 import com.lexterlabra.puzzle.ui.components.SegmentedControl
 import com.lexterlabra.puzzle.ui.components.scenicImage
+import com.lexterlabra.puzzle.ui.theme.CandyCta
+import com.lexterlabra.puzzle.ui.theme.DisplayStyle
 import com.lexterlabra.puzzle.ui.theme.LocalPalette
 
+private val PreviewMine = PuzzleState(4, listOf(5, 1, 2, 4, 9, 6, 3, 8, 13, 10, 7, 11, 0, 14, 15, 12))
+private val PreviewRival = PuzzleState(4, listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 10, 12, 13, 14, 11, 15))
+
+/**
+ * Race-first landing: racing a friend nearby is the hero, "your photo, your puzzle" comes
+ * next, and solo play is the quieter third option.
+ */
 @Composable
-fun LandingScreen(onPlay: (Players, Mode) -> Unit, onLeaderboard: () -> Unit) {
-    var players by rememberSaveable { mutableStateOf(Players.SINGLE) }
+fun LandingScreen(onPlay: (Players, Mode) -> Unit, onLeaderboard: () -> Unit, onPhoto: (Mode) -> Unit = {}) {
     var mode by rememberSaveable { mutableStateOf(Mode.TIME_BASED) }
     val scenic = scenicImage()
-    val preview = remember { PuzzleEngine.slide(PuzzleEngine.solved(4), 14) }
     val palette = LocalPalette.current
 
     ScreenScaffold(scenic) {
         Column(
             Modifier.fillMaxSize().widthIn(max = 560.dp).align(Alignment.TopCenter).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("OFFLINE · PLAY SOLO OR NEARBY", fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp, color = palette.secondaryText)
-                    Text(APP_NAME, fontSize = 34.sp, fontWeight = FontWeight.Bold, color = palette.text)
+                    Text("SWEET & OFFLINE", fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.8.sp, color = palette.secondaryText)
+                    Text(APP_NAME, style = DisplayStyle, fontSize = 30.sp, color = palette.text)
                 }
-                GlassIconButton(Icons.Rounded.EmojiEvents, "Leaderboard", onLeaderboard)
+                GlassIconButton(Icons.Rounded.EmojiEvents, "Leaderboard", onLeaderboard, tint = palette.gold)
             }
 
-            GlassSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp)) {
-                BoardView(
-                    preview, scenic, onTileTap = {},
-                    modifier = Modifier.padding(18.dp).fillMaxWidth().align(Alignment.Center),
-                    interactive = false,
-                )
-            }
+            SegmentedControl(
+                segments = listOf(Segment(Mode.TIME_BASED, "Time attack", Icons.Rounded.Timer), Segment(Mode.FREE, "Free play", Icons.Rounded.AllInclusive)),
+                selected = mode,
+                onSelect = { mode = it },
+            )
 
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                SectionLabel("Players")
-                SegmentedControl(
-                    segments = listOf(Segment(Players.SINGLE, "Single", Icons.Rounded.Person), Segment(Players.P2P, "Peer to Peer", Icons.Rounded.Group)),
-                    selected = players,
-                    onSelect = { players = it },
-                )
-            }
-
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                SectionLabel("Mode")
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ModeCard(Icons.Rounded.Timer, "Time-based", "Stopwatch, ranked on the leaderboard", mode == Mode.TIME_BASED, Modifier.weight(1f)) { mode = Mode.TIME_BASED }
-                    ModeCard(Icons.Rounded.AllInclusive, "Free play", "No timer, play at your pace", mode == Mode.FREE, Modifier.weight(1f)) { mode = Mode.FREE }
-                }
-            }
-
-            PrimaryButton("Play", onClick = { onPlay(players, mode) }, icon = Icons.Rounded.PlayArrow)
+            RaceCard(scenic) { onPlay(Players.P2P, mode) }
+            PhotoCard(scenic) { onPhoto(mode) }
+            GlassButton("Play solo", onClick = { onPlay(Players.SINGLE, mode) }, icon = Icons.Rounded.Person)
         }
     }
 }
 
 @Composable
-private fun ModeCard(icon: ImageVector, title: String, subtitle: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+private fun RaceCard(image: ImageBitmap, onFindRival: () -> Unit) {
     val palette = LocalPalette.current
-    val shape = RoundedCornerShape(20.dp)
-    GlassSurface(
-        modifier
-            .clip(shape)
-            .then(if (selected) Modifier.border(2.dp, palette.accent, shape) else Modifier)
-            .clickable(role = Role.RadioButton, onClick = onClick),
-        shape = shape,
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(icon, contentDescription = null, tint = if (selected) palette.accent else palette.text, modifier = Modifier.size(26.dp))
-            Text(title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = palette.text)
-            Text(subtitle, fontSize = 13.sp, color = palette.secondaryText)
+    val pulse = rememberInfiniteTransition(label = "vs")
+    val vsScale by pulse.animateFloat(1f, 1.08f, infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "vs-scale")
+    val dot by pulse.animateFloat(0.35f, 1f, infiniteRepeatable(tween(800), RepeatMode.Reverse), label = "dot")
+
+    GlassSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(30.dp)) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    Modifier.clip(RoundedCornerShape(14.dp)).background(palette.track).padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(Modifier.size(8.dp).clip(CircleShape).background(palette.accent.copy(alpha = dot)))
+                    Text("  Play nearby", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = palette.text)
+                }
+                Text("WI-FI · NO INTERNET", Modifier.weight(1f), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp, color = palette.secondaryText, textAlign = androidx.compose.ui.text.style.TextAlign.End)
+            }
+            Column {
+                Text("Race a friend", style = DisplayStyle, fontSize = 25.sp, color = palette.text)
+                Text("Same photo, same shuffle. First to finish wins.", fontSize = 15.sp, color = palette.secondaryText)
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                MiniBoard(PreviewMine, image, palette.accent, "YOU", alpha = 1f)
+                Box(
+                    Modifier
+                        .size(56.dp)
+                        .scale(vsScale)
+                        .shadow(10.dp, CircleShape, spotColor = CandyCta.bottom)
+                        .clip(CircleShape)
+                        .background(CandyCta.brush),
+                    contentAlignment = Alignment.Center,
+                ) { Text("VS", style = DisplayStyle, fontSize = 18.sp, color = Color.White) }
+                MiniBoard(PreviewRival, image, palette.opponentAccent, "RIVAL", alpha = 0.85f)
+            }
+            PrimaryButton("Find a rival", onClick = onFindRival, icon = Icons.Rounded.Wifi)
+        }
+    }
+}
+
+@Composable
+private fun MiniBoard(state: PuzzleState, image: ImageBitmap, ring: Color, label: String, alpha: Float) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Box(
+            Modifier
+                .size(118.dp)
+                .shadow(14.dp, RoundedCornerShape(16.dp), ambientColor = ring, spotColor = ring)
+                .clip(RoundedCornerShape(16.dp))
+                .background(LocalPalette.current.glassTintSolid)
+                .border(2.5.dp, ring, RoundedCornerShape(16.dp))
+                .padding(6.dp),
+        ) {
+            BoardView(state, image, onTileTap = {}, interactive = false, modifier = Modifier.alpha(alpha))
+        }
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = ring)
+    }
+}
+
+@Composable
+private fun PhotoCard(image: ImageBitmap, onPick: () -> Unit) {
+    val palette = LocalPalette.current
+    GlassSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(26.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                PhotoStack(image)
+                Column(Modifier.weight(1f)) {
+                    Text("Your photo, your puzzle", style = DisplayStyle, fontSize = 18.sp, color = palette.text)
+                    Text("Snap your dog, your crew, tonight\u2019s dinner. We slice it into tiles.", fontSize = 14.sp, color = palette.secondaryText)
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                GlassButton("Camera", onClick = onPick, modifier = Modifier.weight(1f), icon = Icons.Rounded.PhotoCamera, iconTint = palette.accent)
+                GlassButton("Gallery", onClick = onPick, modifier = Modifier.weight(1f), icon = Icons.Rounded.PhotoLibrary, iconTint = palette.accent)
+            }
+        }
+    }
+}
+
+/** Three tilted snapshots; the front one shows the tile cuts. */
+@Composable
+private fun PhotoStack(image: ImageBitmap) {
+    Box(Modifier.size(width = 86.dp, height = 74.dp)) {
+        Snapshot(image, Modifier.offset(x = 0.dp, y = 12.dp).rotate(-12f), grid = false)
+        Snapshot(image, Modifier.offset(x = 16.dp, y = 4.dp).rotate(4f), grid = false)
+        Snapshot(image, Modifier.offset(x = 30.dp, y = 14.dp).rotate(14f), grid = true)
+    }
+}
+
+@Composable
+private fun Snapshot(image: ImageBitmap, modifier: Modifier, grid: Boolean) {
+    Box(modifier.size(52.dp).shadow(6.dp, RoundedCornerShape(10.dp)).clip(RoundedCornerShape(10.dp)).border(2.dp, Color.White, RoundedCornerShape(10.dp))) {
+        Image(image, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+        if (grid) {
+            Canvas(Modifier.fillMaxSize()) {
+                val cell = size.width / 4
+                for (i in 1 until 4) {
+                    drawLine(Color.White.copy(alpha = 0.85f), Offset(i * cell, 0f), Offset(i * cell, size.height), strokeWidth = 1.dp.toPx())
+                    drawLine(Color.White.copy(alpha = 0.85f), Offset(0f, i * cell), Offset(size.width, i * cell), strokeWidth = 1.dp.toPx())
+                }
+            }
         }
     }
 }

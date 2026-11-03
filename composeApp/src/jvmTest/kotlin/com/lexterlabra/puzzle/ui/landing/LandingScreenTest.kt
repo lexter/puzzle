@@ -20,7 +20,7 @@ class LandingScreenTest {
     fun playSingleTimeBasedByDefault() = runComposeUiTest {
         var played: Pair<Players, Mode>? = null
         setContent { PuzzleTheme(Appearance.LIGHT) { LandingScreen(onPlay = { p, m -> played = p to m }, onLeaderboard = {}) } }
-        onNodeWithText("Play").performScrollTo().performClick()
+        onNodeWithText("Play solo").performScrollTo().performClick()
         assertEquals(Players.SINGLE to Mode.TIME_BASED, played)
     }
 
@@ -28,10 +28,17 @@ class LandingScreenTest {
     fun playP2PFreePlay() = runComposeUiTest {
         var played: Pair<Players, Mode>? = null
         setContent { PuzzleTheme(Appearance.LIGHT) { LandingScreen(onPlay = { p, m -> played = p to m }, onLeaderboard = {}) } }
-        onNodeWithText("Peer to Peer").performClick()
-        onNodeWithText("Free play").performScrollTo().performClick()
-        onNodeWithText("Play").performScrollTo().performClick()
+        onNodeWithText("Free play").performClick()
+        onNodeWithText("Find a rival").performScrollTo().performClick()
         assertEquals(Players.P2P to Mode.FREE, played)
+    }
+
+    @Test
+    fun photoCardOpensMakeYourPuzzle() = runComposeUiTest {
+        var photoMode: Mode? = null
+        setContent { PuzzleTheme(Appearance.DARK) { LandingScreen(onPlay = { _, _ -> }, onLeaderboard = {}, onPhoto = { photoMode = it }) } }
+        onNodeWithText("Camera").performScrollTo().performClick()
+        assertEquals(Mode.TIME_BASED, photoMode)
     }
 
     @Test

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.lexterlabra.puzzle.data.SettingsStore
 import com.lexterlabra.puzzle.game.Mode
 import com.lexterlabra.puzzle.game.PuzzleState
+import com.lexterlabra.puzzle.image.ChosenPhoto
 import com.lexterlabra.puzzle.image.ImageCodec
 import com.lexterlabra.puzzle.image.ImageTooSmall
 import com.lexterlabra.puzzle.image.PuzzleImage
@@ -50,8 +51,9 @@ class LobbyViewModel(
     private val hub: MatchHub,
     private val deviceName: () -> String = DeviceName::get,
     private val workDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    initialPhoto: ChosenPhoto? = null,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(LobbyUiState(mode = mode))
+    private val _state = MutableStateFlow(LobbyUiState(mode = mode, customImage = initialPhoto?.image, customJpeg = initialPhoto?.jpeg))
     val state: StateFlow<LobbyUiState> = _state.asStateFlow()
 
     val controller get() = hub.controller

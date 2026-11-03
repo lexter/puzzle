@@ -16,6 +16,9 @@ import com.lexterlabra.puzzle.data.SettingsStore
 import com.lexterlabra.puzzle.data.createDataStore
 import com.lexterlabra.puzzle.game.Mode
 import com.lexterlabra.puzzle.game.Players
+import com.lexterlabra.puzzle.image.PhotoSelection
+import com.lexterlabra.puzzle.ui.photo.PhotoScreen
+import com.lexterlabra.puzzle.ui.photo.PhotoViewModel
 import com.lexterlabra.puzzle.platform.PlatformBackHandler
 import com.lexterlabra.puzzle.p2p.MatchHub
 import com.lexterlabra.puzzle.ui.game.GameScreen
@@ -33,7 +36,7 @@ import com.lexterlabra.puzzle.ui.theme.PuzzleTheme
 const val APP_NAME = "Slide Puzzle"
 
 /** Hand-wired dependencies, one instance per process. */
-class AppContainer(val settings: SettingsStore, val scores: ScoreStore, val matchHub: MatchHub)
+class AppContainer(val settings: SettingsStore, val scores: ScoreStore, val matchHub: MatchHub, val photos: PhotoSelection = PhotoSelection())
 
 object AppGraph {
     val container: AppContainer by lazy {
@@ -62,20 +65,27 @@ private fun ScreenContent(screen: Screen, navigator: Navigator, container: AppCo
             onPlay = { players, mode ->
                 navigator.push(if (players == Players.SINGLE) Screen.Game(mode) else Screen.Lobby(mode))
             },
+            onPhoto = { mode -> navigator.push(Screen.Photo(mode)) },
             onLeaderboard = { navigator.push(Screen.Leaderboard) },
+        )
+        is Screen.Photo -> PhotoScreen(
+            viewModel = viewModel { PhotoViewModel(container.settings, container.photos) },
+            onBack = { navigator.pop() },
+            onRace = { navigator.replace(Screen.Lobby(screen.mode)) },
+            onSolo = { navigator.replace(Screen.Game(screen.mode)) },
         )
         Screen.Leaderboard -> LeaderboardScreen(
             viewModel = viewModel { LeaderboardViewModel(container.scores) },
             onBack = { navigator.pop() },
         )
         is Screen.Game -> GameScreen(
-            viewModel = viewModel { GameViewModel(screen.mode, container.settings, container.scores) },
+            viewModel = viewModel { GameViewModel(screen.mode, container.settings, container.scores, initialImage = container.photos.chosen.value?.image) },
             onBack = { navigator.pop() },
             onHome = { navigator.popToRoot() },
             settings = container.settings,
         )
         is Screen.Lobby -> LobbyScreen(
-            viewModel = viewModel { LobbyViewModel(screen.mode, container.settings, container.matchHub) },
+            viewModel = viewModel { LobbyViewModel(screen.mode, container.settings, container.matchHub, initialPhoto = container.photos.chosen.value) },
             onBack = { navigator.pop() },
             onRaceStarting = { navigator.replace(Screen.Race) },
         )

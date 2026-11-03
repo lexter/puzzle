@@ -12,6 +12,7 @@ sealed interface Screen {
     data class Game(val mode: Mode) : Screen
     data class Lobby(val mode: Mode) : Screen
     data object Race : Screen
+    data class Photo(val mode: Mode) : Screen
 }
 
 /** One back-stack entry; owns the ViewModels of its screen and clears them when popped. */

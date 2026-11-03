@@ -1,6 +1,8 @@
 package com.lexterlabra.puzzle.ui.game
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -149,6 +151,7 @@ fun GameScreen(viewModel: GameViewModel, settings: SettingsStore, onBack: () -> 
     ResultCard(
         visible = state.phase == Phase.WON,
         title = "Solved!",
+        celebrate = true,
         lines = listOfNotNull(
             if (state.mode == Mode.TIME_BASED) "Time ${formatElapsed(state.elapsedMs)}" else null,
             "${state.puzzle.moves} moves · ${state.puzzle.size}×${state.puzzle.size}",
@@ -178,7 +181,7 @@ fun GameScreen(viewModel: GameViewModel, settings: SettingsStore, onBack: () -> 
 private fun InfoRow(state: GameUiState) {
     val palette = LocalPalette.current
     Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp)) {
-        val modeLabel = if (state.mode == Mode.TIME_BASED) "Time-based" else "Free play"
+        val modeLabel = if (state.mode == Mode.TIME_BASED) "Time attack" else "Free play"
         Text("${state.puzzle.size}×${state.puzzle.size} · $modeLabel", Modifier.weight(1f), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = palette.text)
         Text("Moves ${state.puzzle.moves}", style = TabularNumbers.copy(fontWeight = FontWeight.Normal), fontSize = 15.sp, color = palette.secondaryText)
     }
@@ -186,7 +189,13 @@ private fun InfoRow(state: GameUiState) {
 
 @Composable
 private fun GameBoard(state: GameUiState, image: ImageBitmap, modifier: Modifier, onTap: (Int) -> Unit) {
-    GlassSurface(modifier, shape = RoundedCornerShape(28.dp)) {
+    val accent = LocalPalette.current.accent
+    GlassSurface(
+        modifier
+            .shadow(22.dp, RoundedCornerShape(28.dp), ambientColor = accent, spotColor = accent)
+            .border(3.dp, accent, RoundedCornerShape(28.dp)),
+        shape = RoundedCornerShape(28.dp),
+    ) {
         Box(Modifier.padding(12.dp)) {
             BoardView(state.puzzle, image, onTileTap = onTap, interactive = state.phase == Phase.PLAYING)
             if (state.pausedHidden) {

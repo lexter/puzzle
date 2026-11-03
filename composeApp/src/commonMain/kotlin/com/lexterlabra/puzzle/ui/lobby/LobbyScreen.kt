@@ -1,5 +1,20 @@
 package com.lexterlabra.puzzle.ui.lobby
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.lexterlabra.puzzle.ui.components.Avatar
+import com.lexterlabra.puzzle.ui.theme.CandyCta
+import com.lexterlabra.puzzle.ui.theme.DisplayStyle
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -91,14 +106,22 @@ fun LobbyScreen(viewModel: LobbyViewModel, onBack: () -> Unit, onRaceStarting: (
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 GlassIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
-                Text("Play nearby", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = palette.text)
+                Text("Find a rival", style = DisplayStyle, fontSize = 24.sp, color = palette.text)
             }
             SegmentedControl(
-                listOf(Segment(LobbyTab.HOST, "Host"), Segment(LobbyTab.JOIN, "Join")),
+                listOf(Segment(LobbyTab.HOST, "Host a race"), Segment(LobbyTab.JOIN, "Join a race")),
                 selected = state.tab,
                 onSelect = viewModel::selectTab,
                 height = 44,
                 enabled = match == null || match.phase == MatchPhase.LOST,
+            )
+
+            Radar(
+                peers = when {
+                    state.tab == LobbyTab.JOIN -> state.hosts.map { it.name }
+                    else -> listOfNotNull(match?.peerName)
+                },
+                modifier = Modifier.align(Alignment.CenterHorizontally),
             )
 
             if (state.tab == LobbyTab.HOST) {
@@ -216,9 +239,7 @@ private fun PlayerRow(name: String, status: String, actionLabel: String?, onActi
     val palette = LocalPalette.current
     GlassSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(Modifier.size(40.dp).clip(CircleShape).background(palette.opponentAccent), contentAlignment = Alignment.Center) {
-                Text(name.take(1).uppercase(), fontWeight = FontWeight.Bold, color = Color(0xFF12203A))
-            }
+            Avatar(name, palette.opponentAccent, size = 42)
             Column(Modifier.weight(1f)) {
                 Text(name, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = palette.text, maxLines = 1)
                 Text(status, fontSize = 13.sp, color = palette.secondaryText)
@@ -228,10 +249,35 @@ private fun PlayerRow(name: String, status: String, actionLabel: String?, onActi
             }
             if (actionLabel != null) {
                 Box(
-                    Modifier.height(44.dp).clip(RoundedCornerShape(22.dp)).background(palette.accent).clickable(role = Role.Button, onClick = onAction).padding(horizontal = 18.dp),
+                    Modifier.height(44.dp).clip(RoundedCornerShape(16.dp)).background(CandyCta.brush).clickable(role = Role.Button, onClick = onAction).padding(horizontal = 18.dp),
                     contentAlignment = Alignment.Center,
-                ) { Text(actionLabel, color = palette.onAccent, fontWeight = FontWeight.SemiBold) }
+                ) { Text(actionLabel, color = Color.White, fontWeight = FontWeight.ExtraBold) }
             }
         }
     }
 }
+
+/** Radar sweep with the local player in the middle and found players as blips around it. */
+@Composable
+private fun Radar(peers: List<String>, modifier: Modifier = Modifier) {
+    val palette = LocalPalette.current
+    val sweep by rememberInfiniteTransition(label = "radar").animateFloat(
+        0f, 360f, infiniteRepeatable(tween(2_600, easing = LinearEasing)), label = "radar-angle",
+    )
+    Box(modifier.size(220.dp).semantics { contentDescription = if (peers.isEmpty()) "Searching nearby" else "${peers.size} nearby" }, contentAlignment = Alignment.Center) {
+        Canvas(Modifier.fillMaxSize()) {
+            val ring = palette.accent
+            for (k in 1..3) drawCircle(ring.copy(alpha = 0.18f + 0.08f * k), radius = size.minDimension / 2 * k / 3f, style = Stroke(1.dp.toPx()))
+            rotate(sweep) {
+                drawCircle(Brush.sweepGradient(listOf(ring.copy(alpha = 0.45f), Color.Transparent, Color.Transparent, Color.Transparent)), radius = size.minDimension / 2)
+            }
+        }
+        Avatar("You", palette.accent, size = 50, glow = true)
+        peers.take(BLIP_SLOTS.size).forEachIndexed { index, name ->
+            val (dx, dy) = BLIP_SLOTS[index]
+            Avatar(name, if (index == 0) palette.opponentAccent else palette.gold, Modifier.offset(dx.dp, dy.dp), size = 38, glow = true)
+        }
+    }
+}
+
+private val BLIP_SLOTS = listOf(62 to -58, -70 to 52, 74 to 60, -60 to -66)

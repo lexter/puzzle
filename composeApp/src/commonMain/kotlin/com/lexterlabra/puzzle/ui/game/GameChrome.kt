@@ -5,6 +5,17 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.rotate
+import com.lexterlabra.puzzle.ui.theme.CandyCta
+import com.lexterlabra.puzzle.ui.theme.DisplayStyle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -154,7 +165,7 @@ fun SettingsSheet(
                     verticalArrangement = Arrangement.spacedBy(18.dp),
                 ) {
                     Box(Modifier.align(Alignment.CenterHorizontally).size(40.dp, 5.dp).clip(RoundedCornerShape(3.dp)).background(palette.track))
-                    Text("Game settings", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = palette.text)
+                    Text("Game settings", style = DisplayStyle, fontSize = 22.sp, color = palette.text)
 
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row {
@@ -226,12 +237,18 @@ fun ResultCard(
     onPrimary: () -> Unit,
     secondaryLabel: String,
     onSecondary: () -> Unit,
+    celebrate: Boolean = false,
 ) {
     Overlay(visible, onDismiss = null) {
         val palette = LocalPalette.current
+        if (celebrate) Confetti(Modifier.fillMaxSize())
         GlassSurface(Modifier.align(Alignment.Center).widthIn(max = 420.dp).fillMaxWidth().padding(24.dp), shape = RoundedCornerShape(30.dp), solid = true) {
             Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(title, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = palette.text)
+                if (celebrate) {
+                    Text(title, style = DisplayStyle.copy(brush = CandyCta.titleBrush), fontSize = 40.sp, textAlign = TextAlign.Center)
+                } else {
+                    Text(title, style = DisplayStyle, fontSize = 28.sp, color = palette.text, textAlign = TextAlign.Center)
+                }
                 lines.forEach { Text(it, fontSize = 17.sp, color = palette.secondaryText, textAlign = TextAlign.Center) }
                 if (highlight != null) Text(highlight, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = palette.accent)
                 Spacer(Modifier.height(4.dp))
@@ -258,3 +275,38 @@ fun BoxScope.MessageToast(text: String?, actionLabel: String? = null, onAction: 
         }
     }
 }
+
+/** Falling candy-colored confetti, drawn behind the win card. */
+@Composable
+fun Confetti(modifier: Modifier = Modifier) {
+    val palette = LocalPalette.current
+    val pieces = remember { List(CONFETTI_COUNT) { i -> ConfettiPiece(i) } }
+    val time by rememberInfiniteTransition(label = "confetti").animateFloat(
+        0f, 1f, infiniteRepeatable(tween(CONFETTI_LOOP_MS, easing = LinearEasing)), label = "confetti-t",
+    )
+    Canvas(modifier) {
+        pieces.forEach { p ->
+            val t = (time * p.speed + p.phase) % 1f
+            val x = p.x * size.width + kotlin.math.sin((t * 6.28f) + p.phase * 10f) * 18.dp.toPx()
+            val y = -20.dp.toPx() + t * (size.height + 40.dp.toPx())
+            rotate(t * 540f + p.phase * 360f, pivot = Offset(x, y)) {
+                drawRect(
+                    color = palette.sprinkles[p.colorIndex % palette.sprinkles.size],
+                    topLeft = Offset(x - 4.dp.toPx(), y - 6.dp.toPx()),
+                    size = Size(if (p.colorIndex % 2 == 0) 8.dp.toPx() else 6.dp.toPx(), if (p.colorIndex % 3 == 0) 14.dp.toPx() else 9.dp.toPx()),
+                )
+            }
+        }
+    }
+}
+
+private class ConfettiPiece(index: Int) {
+    private val random = kotlin.random.Random(index * 31 + 7)
+    val x = random.nextFloat()
+    val phase = random.nextFloat()
+    val speed = 0.7f + random.nextFloat() * 0.6f
+    val colorIndex = index
+}
+
+private const val CONFETTI_COUNT = 36
+private const val CONFETTI_LOOP_MS = 4_000

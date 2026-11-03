@@ -1,6 +1,20 @@
 package com.lexterlabra.puzzle.ui.game
 
 import androidx.compose.foundation.background
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.border
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import com.lexterlabra.puzzle.ui.components.Avatar
+import com.lexterlabra.puzzle.ui.components.TugOfWar
+import com.lexterlabra.puzzle.ui.theme.CandyCta
+import com.lexterlabra.puzzle.ui.theme.DisplayStyle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -71,6 +85,7 @@ import kotlinx.coroutines.launch
 
 const val MIRROR_ALPHA = 0.7f
 private val MIRROR_MAX_SIDE_PANEL = 200.dp
+private const val RIVAL_CLOSE_TILES = 4
 
 /** Peer-to-peer race. [onLeave] must end the match (MatchHub.end) and navigate away. */
 @Composable
@@ -118,7 +133,12 @@ fun RaceGameScreen(controller: MatchController, settings: SettingsStore, onLeave
                 StatusLine(peer, match, grid)
 
                 val myBoardView: @Composable (Modifier) -> Unit = { modifier ->
-                    GlassSurface(modifier, shape = RoundedCornerShape(28.dp)) {
+                    GlassSurface(
+                        modifier
+                            .shadow(22.dp, RoundedCornerShape(28.dp), ambientColor = LocalPalette.current.accent, spotColor = LocalPalette.current.accent)
+                            .border(3.dp, LocalPalette.current.accent, RoundedCornerShape(28.dp)),
+                        shape = RoundedCornerShape(28.dp),
+                    ) {
                         BoardView(
                             myBoard, image,
                             onTileTap = { haptics.tap(); controller.tapTile(it) },
@@ -129,6 +149,7 @@ fun RaceGameScreen(controller: MatchController, settings: SettingsStore, onLeave
                 }
                 val side: @Composable ColumnScope.() -> Unit = {
                     RaceProgress(myBoard, theirBoard, peer)
+                    if (match.phase == MatchPhase.RACING && match.mySolvedMs == null) RivalCloseBanner(myBoard, theirBoard, peer)
                     PreRaceControls(controller.role, match, onStart = controller::startRace)
                 }
 
@@ -152,7 +173,7 @@ fun RaceGameScreen(controller: MatchController, settings: SettingsStore, onLeave
                 }
             }
 
-            if (match.phase == MatchPhase.COUNTDOWN) CountdownBadge(countdown, Modifier.align(Alignment.Center))
+            if (match.phase == MatchPhase.COUNTDOWN) VsCountdown(countdown, peer, image)
             MessageToast(
                 text = when (match.notice) {
                     MatchNotice.IMAGE_FALLBACK -> "Couldn't send the photo, so you're racing on the scenic picture."
@@ -169,7 +190,8 @@ fun RaceGameScreen(controller: MatchController, settings: SettingsStore, onLeave
     val result = match.result
     ResultCard(
         visible = match.phase == MatchPhase.FINISHED && result != null,
-        title = if (result?.iWon == true) "You win!" else "$peer won",
+        title = if (result?.iWon == true) "YOU WIN!" else "$peer won",
+        celebrate = result?.iWon == true,
         lines = listOfNotNull(
             result?.let { if (timed) "Winning time ${formatElapsed(it.winnerTimeMs)}" else null },
             "${myBoard.moves} moves · ${grid}×$grid",
@@ -248,14 +270,15 @@ fun OpponentMirror(board: PuzzleState, image: ImageBitmap, name: String, modifie
         modifier
             .alpha(MIRROR_ALPHA)
             .testTag("opponent-mirror")
-            .semantics { contentDescription = "$name's board, live" },
+            .semantics { contentDescription = "$name's board, live" }
+            .border(3.dp, palette.opponentAccent, RoundedCornerShape(18.dp)),
         shape = RoundedCornerShape(18.dp),
         solid = true,
     ) {
         Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             BoardView(board, image, onTileTap = {}, interactive = false)
             Row {
-                Text(name, Modifier.weight(1f), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = palette.text, maxLines = 1)
+                Text(name, Modifier.weight(1f), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = palette.opponentAccent, maxLines = 1)
                 Text("${board.tilesInPlace}/${board.tileCount}", style = TabularNumbers, fontSize = 12.sp, color = palette.text)
             }
         }
@@ -264,23 +287,38 @@ fun OpponentMirror(board: PuzzleState, image: ImageBitmap, name: String, modifie
 
 @Composable
 private fun RaceProgress(me: PuzzleState, opponent: PuzzleState, peer: String) {
-    val palette = LocalPalette.current
-    GlassSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ProgressRow("You", me, palette.accent)
-            ProgressRow(peer, opponent, palette.opponentAccent)
-        }
+    GlassSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
+        TugOfWar(
+            youFraction = me.tilesInPlace.toFloat() / me.tileCount,
+            rivalFraction = opponent.tilesInPlace.toFloat() / opponent.tileCount,
+            youLabel = "YOU · ${me.tilesInPlace}/${me.tileCount}",
+            rivalLabel = "${peer.uppercase()} · ${opponent.tilesInPlace}/${opponent.tileCount}",
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+        )
     }
 }
 
+/** Nudge shown when the rival is ahead and close to finishing. */
 @Composable
-private fun ProgressRow(label: String, board: PuzzleState, color: Color) {
+private fun RivalCloseBanner(me: PuzzleState, opponent: PuzzleState, peer: String) {
+    val left = opponent.tileCount - opponent.tilesInPlace
+    if (left == 0 || left > RIVAL_CLOSE_TILES || opponent.tilesInPlace <= me.tilesInPlace) return
     val palette = LocalPalette.current
-    Row {
-        Text(label, Modifier.weight(1f), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = palette.text)
-        Text("${board.tilesInPlace} / ${board.tileCount} in place", style = TabularNumbers.copy(fontWeight = FontWeight.Normal), fontSize = 14.sp, color = palette.secondaryText)
+    val shape = RoundedCornerShape(20.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(palette.opponentAccent.copy(alpha = 0.16f))
+            .border(1.dp, palette.opponentAccent.copy(alpha = 0.55f), shape)
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .semantics { liveRegion = LiveRegionMode.Polite },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        Icon(Icons.Rounded.Bolt, contentDescription = null, tint = palette.opponentAccent, modifier = Modifier.size(18.dp))
+        Text("  $peer is $left ${if (left == 1) "tile" else "tiles"} from done. Speed up!", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = palette.text)
     }
-    ProgressTrack(board.tilesInPlace.toFloat() / board.tileCount, color)
 }
 
 @Composable
@@ -293,10 +331,43 @@ private fun PreRaceControls(role: Role, match: MatchSnapshot, onStart: () -> Uni
     }
 }
 
+/** Full-screen VS splash with the 3-2-1 in the middle. */
 @Composable
-private fun CountdownBadge(remainingMs: Long, modifier: Modifier) {
+private fun VsCountdown(remainingMs: Long, peer: String, image: ImageBitmap) {
+    val palette = LocalPalette.current
     val seconds = ((remainingMs + 999) / 1000).coerceAtLeast(1)
-    GlassSurface(modifier.size(140.dp), shape = CircleShape, solid = true) {
-        Text("$seconds", Modifier.align(Alignment.Center), fontSize = 72.sp, fontWeight = FontWeight.Bold, color = LocalPalette.current.accent)
+    val pop by animateFloatAsState(if (remainingMs % 1000 > 700) 1.25f else 1f, label = "count-pop")
+    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)).semantics { liveRegion = LiveRegionMode.Assertive }) {
+        Row(Modifier.align(Alignment.TopStart).padding(top = 80.dp, start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Avatar("You", palette.accent, size = 64, glow = true)
+            Column(Modifier.padding(start = 12.dp)) {
+                Text("YOU", style = DisplayStyle, fontSize = 26.sp, color = palette.accent)
+                Text("Same photo · same shuffle", fontSize = 13.sp, color = Color.White)
+            }
+        }
+        Box(
+            Modifier
+                .align(Alignment.Center)
+                .size(170.dp)
+                .shadow(30.dp, CircleShape, ambientColor = CandyCta.top, spotColor = CandyCta.top)
+                .clip(CircleShape)
+                .background(palette.background)
+                .border(4.dp, Color.White, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                "$seconds",
+                Modifier.scale(pop),
+                style = DisplayStyle.copy(brush = Brush.linearGradient(listOf(palette.accent, palette.opponentAccent))),
+                fontSize = 88.sp,
+            )
+        }
+        Row(Modifier.align(Alignment.BottomEnd).padding(bottom = 120.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.padding(end = 12.dp), horizontalAlignment = Alignment.End) {
+                Text(peer.uppercase(), style = DisplayStyle, fontSize = 26.sp, color = palette.opponentAccent, maxLines = 1)
+                Text("First to finish wins", fontSize = 13.sp, color = Color.White)
+            }
+            Avatar(peer, palette.opponentAccent, size = 64, glow = true)
+        }
     }
 }

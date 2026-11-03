@@ -56,9 +56,10 @@ class GameViewModel(
     private val shuffler: (size: Int, seed: Long) -> PuzzleState = PuzzleEngine::shuffled,
     private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
     private val workDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    initialImage: ImageBitmap? = null,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(GameUiState(PuzzleEngine.solved(PuzzleState.DEFAULT_SIZE), mode))
+    private val _state = MutableStateFlow(GameUiState(PuzzleEngine.solved(PuzzleState.DEFAULT_SIZE), mode, customImage = initialImage))
     val state: StateFlow<GameUiState> = _state.asStateFlow()
 
     init {

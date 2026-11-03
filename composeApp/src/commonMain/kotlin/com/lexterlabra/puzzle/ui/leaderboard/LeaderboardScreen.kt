@@ -63,7 +63,7 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel, onBack: () -> Unit) {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 GlassIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
-                Text("Leaderboard", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = palette.text)
+                Text("Leaderboard", style = com.lexterlabra.puzzle.ui.theme.DisplayStyle, fontSize = 24.sp, color = palette.text)
             }
             SegmentedControl(sizes, selected, viewModel::select, height = 44)
             Text("Top 10 · $selected×$selected · time-based", Modifier.padding(horizontal = 8.dp), fontSize = 13.sp, color = palette.secondaryText)
