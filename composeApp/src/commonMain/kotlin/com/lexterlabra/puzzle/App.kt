@@ -5,6 +5,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lexterlabra.puzzle.data.Appearance
@@ -13,9 +14,14 @@ import com.lexterlabra.puzzle.data.ScoreStore
 import com.lexterlabra.puzzle.data.SettingsRepository
 import com.lexterlabra.puzzle.data.SettingsStore
 import com.lexterlabra.puzzle.data.createDataStore
+import com.lexterlabra.puzzle.game.Mode
 import com.lexterlabra.puzzle.game.Players
 import com.lexterlabra.puzzle.platform.PlatformBackHandler
+import com.lexterlabra.puzzle.p2p.MatchHub
 import com.lexterlabra.puzzle.ui.game.GameScreen
+import com.lexterlabra.puzzle.ui.game.RaceGameScreen
+import com.lexterlabra.puzzle.ui.lobby.LobbyScreen
+import com.lexterlabra.puzzle.ui.lobby.LobbyViewModel
 import com.lexterlabra.puzzle.ui.game.GameViewModel
 import com.lexterlabra.puzzle.ui.landing.LandingScreen
 import com.lexterlabra.puzzle.ui.leaderboard.LeaderboardScreen
@@ -27,12 +33,12 @@ import com.lexterlabra.puzzle.ui.theme.PuzzleTheme
 const val APP_NAME = "Slide Puzzle"
 
 /** Hand-wired dependencies, one instance per process. */
-class AppContainer(val settings: SettingsStore, val scores: ScoreStore)
+class AppContainer(val settings: SettingsStore, val scores: ScoreStore, val matchHub: MatchHub)
 
 object AppGraph {
     val container: AppContainer by lazy {
         val store = createDataStore()
-        AppContainer(SettingsRepository(store), ScoreRepository(store))
+        AppContainer(SettingsRepository(store), ScoreRepository(store), MatchHub())
     }
 }
 
@@ -68,7 +74,22 @@ private fun ScreenContent(screen: Screen, navigator: Navigator, container: AppCo
             onHome = { navigator.popToRoot() },
             settings = container.settings,
         )
-        is Screen.Lobby -> TODO("Task 13")
-        Screen.Race -> TODO("Task 13")
+        is Screen.Lobby -> LobbyScreen(
+            viewModel = viewModel { LobbyViewModel(screen.mode, container.settings, container.matchHub) },
+            onBack = { navigator.pop() },
+            onRaceStarting = { navigator.replace(Screen.Race) },
+        )
+        Screen.Race -> {
+            val controller by container.matchHub.controller.collectAsState()
+            val leave = {
+                val mode = controller?.state?.value?.config?.mode ?: Mode.TIME_BASED
+                container.matchHub.end()
+                navigator.replace(Screen.Lobby(mode))
+            }
+            PlatformBackHandler(onBack = leave)
+            val current = controller
+            if (current == null) LaunchedEffect(Unit) { navigator.pop() }
+            else RaceGameScreen(current, container.settings, onLeave = leave)
+        }
     }
 }
