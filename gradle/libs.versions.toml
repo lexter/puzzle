@@ -1,0 +1,45 @@
+# Versions pinned from the Compose Multiplatform 1.9 / Kotlin 2.2 release line.
+# If Gradle can't resolve one, bump it to the latest stable on Maven Central.
+[versions]
+agp = "8.12.0"
+kotlin = "2.2.20"
+compose-multiplatform = "1.9.0"
+android-compileSdk = "36"
+android-targetSdk = "36"
+android-minSdk = "29"
+androidx-activity = "1.10.1"
+androidx-core = "1.16.0"
+androidx-exifinterface = "1.4.1"
+androidx-window = "1.4.0"
+androidx-lifecycle = "2.9.4"
+datastore = "1.1.7"
+okio = "3.9.0"
+ktor = "3.3.0"
+kotlinx-coroutines = "1.10.2"
+kotlinx-serialization = "1.9.0"
+kotlinx-datetime = "0.7.1"
+
+[libraries]
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
+androidx-exifinterface = { module = "androidx.exifinterface:exifinterface", version.ref = "androidx-exifinterface" }
+androidx-window = { module = "androidx.window:window", version.ref = "androidx-window" }
+androidx-lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
+androidx-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
+datastore-preferences-core = { module = "androidx.datastore:datastore-preferences-core", version.ref = "datastore" }
+okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
+ktor-network = { module = "io.ktor:ktor-network", version.ref = "ktor" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+
+[plugins]
+androidApplication = { id = "com.android.application", version.ref = "agp" }
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
+composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
