@@ -7,6 +7,8 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -100,6 +102,14 @@ fun LobbyScreen(viewModel: LobbyViewModel, onBack: () -> Unit, onRaceStarting: (
     }
 
     ScreenScaffold(state.customImage ?: scenic) {
+        // The radar sweep is the screen's background; cards sit on top of it.
+        Radar(
+            peers = when {
+                state.tab == LobbyTab.JOIN -> state.hosts.map { it.name }
+                else -> listOfNotNull(match?.peerName)
+            },
+            modifier = Modifier.align(Alignment.Center).offset(y = 60.dp).requiredSize(RADAR_SIZE.dp).alpha(0.85f),
+        )
         Column(
             Modifier.fillMaxSize().widthIn(max = 560.dp).align(Alignment.TopCenter).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(18.dp),
@@ -114,14 +124,6 @@ fun LobbyScreen(viewModel: LobbyViewModel, onBack: () -> Unit, onRaceStarting: (
                 onSelect = viewModel::selectTab,
                 height = 44,
                 enabled = match == null || match.phase == MatchPhase.LOST,
-            )
-
-            Radar(
-                peers = when {
-                    state.tab == LobbyTab.JOIN -> state.hosts.map { it.name }
-                    else -> listOfNotNull(match?.peerName)
-                },
-                modifier = Modifier.align(Alignment.CenterHorizontally),
             )
 
             if (state.tab == LobbyTab.HOST) {
@@ -264,7 +266,7 @@ private fun Radar(peers: List<String>, modifier: Modifier = Modifier) {
     val sweep by rememberInfiniteTransition(label = "radar").animateFloat(
         0f, 360f, infiniteRepeatable(tween(2_600, easing = LinearEasing)), label = "radar-angle",
     )
-    Box(modifier.size(220.dp).semantics { contentDescription = if (peers.isEmpty()) "Searching nearby" else "${peers.size} nearby" }, contentAlignment = Alignment.Center) {
+    Box(modifier.semantics { contentDescription = if (peers.isEmpty()) "Searching nearby" else "${peers.size} nearby" }, contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             val ring = palette.accent
             for (k in 1..3) drawCircle(ring.copy(alpha = 0.18f + 0.08f * k), radius = size.minDimension / 2 * k / 3f, style = Stroke(1.dp.toPx()))
@@ -275,9 +277,11 @@ private fun Radar(peers: List<String>, modifier: Modifier = Modifier) {
         Avatar("You", palette.accent, size = 50, glow = true)
         peers.take(BLIP_SLOTS.size).forEachIndexed { index, name ->
             val (dx, dy) = BLIP_SLOTS[index]
-            Avatar(name, if (index == 0) palette.opponentAccent else palette.gold, Modifier.offset(dx.dp, dy.dp), size = 38, glow = true)
+            Avatar(name, if (index == 0) palette.opponentAccent else palette.gold, Modifier.offset((dx * RADAR_SCALE).dp, (dy * RADAR_SCALE).dp), size = 36, glow = true)
         }
     }
 }
 
 private val BLIP_SLOTS = listOf(62 to -58, -70 to 52, 74 to 60, -60 to -66)
+private const val RADAR_SIZE = 640
+private const val RADAR_SCALE = RADAR_SIZE / 220f

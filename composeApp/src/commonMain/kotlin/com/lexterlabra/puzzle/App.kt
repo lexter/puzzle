@@ -65,7 +65,6 @@ private fun ScreenContent(screen: Screen, navigator: Navigator, container: AppCo
             onPlay = { players, mode ->
                 navigator.push(if (players == Players.SINGLE) Screen.Game(mode) else Screen.Lobby(mode))
             },
-            onPhoto = { mode -> navigator.push(Screen.Photo(mode)) },
             onLeaderboard = { navigator.push(Screen.Leaderboard) },
         )
         is Screen.Photo -> PhotoScreen(

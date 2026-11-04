@@ -3,6 +3,14 @@ package com.lexterlabra.puzzle.ui.game
 import androidx.compose.foundation.background
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import kotlin.math.roundToInt
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material3.Icon
@@ -86,6 +94,7 @@ import kotlinx.coroutines.launch
 const val MIRROR_ALPHA = 0.7f
 private val MIRROR_MAX_SIDE_PANEL = 200.dp
 private const val RIVAL_CLOSE_TILES = 4
+private val MIRROR_WIDTH_COMPACT = 100.dp
 
 /** Peer-to-peer race. [onLeave] must end the match (MatchHub.end) and navigate away. */
 @Composable
@@ -156,9 +165,29 @@ fun RaceGameScreen(controller: MatchController, settings: SettingsStore, onLeave
                 if (layout == LayoutMode.COMPACT) {
                     Column(Modifier.widthIn(max = 640.dp).align(Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                         // The opponent's board floats over the top-right corner of mine at 70% opacity.
-                        Box(Modifier.weight(1f, fill = false)) {
-                            myBoardView(Modifier.padding(top = 56.dp, end = 0.dp))
-                            OpponentMirror(theirBoard, image, peer, Modifier.align(Alignment.TopEnd).width(132.dp))
+                        BoxWithConstraints(Modifier.weight(1f, fill = false)) {
+                            val bounds = constraints
+                            var drag by remember { mutableStateOf(Offset.Zero) }
+                            var mirrorSize by remember { mutableStateOf(IntSize.Zero) }
+                            myBoardView(Modifier.padding(top = 8.dp))
+                            // Small, draggable copy of the rival's board, 70% opaque, starting over the top-right corner.
+                            OpponentMirror(
+                                theirBoard, image, peer,
+                                Modifier
+                                    .align(Alignment.TopEnd)
+                                    .width(MIRROR_WIDTH_COMPACT)
+                                    .onSizeChanged { mirrorSize = it }
+                                    .offset { IntOffset(drag.x.roundToInt(), drag.y.roundToInt()) }
+                                    .pointerInput(Unit) {
+                                        detectDragGestures { change, amount ->
+                                            change.consume()
+                                            val maxLeft = (bounds.maxWidth - mirrorSize.width).coerceAtLeast(0).toFloat()
+                                            val maxDown = (bounds.maxHeight - mirrorSize.height).coerceAtLeast(0).toFloat()
+                                            drag = Offset((drag.x + amount.x).coerceIn(-maxLeft, 0f), (drag.y + amount.y).coerceIn(0f, maxDown))
+                                        }
+                                    },
+                                draggable = true,
+                            )
                         }
                         side()
                     }
@@ -264,18 +293,19 @@ private fun StatusLine(peer: String, match: MatchSnapshot, grid: Int) {
 
 /** The other player's live board, 70% opaque and not tappable. */
 @Composable
-fun OpponentMirror(board: PuzzleState, image: ImageBitmap, name: String, modifier: Modifier = Modifier) {
+fun OpponentMirror(board: PuzzleState, image: ImageBitmap, name: String, modifier: Modifier = Modifier, draggable: Boolean = false) {
     val palette = LocalPalette.current
     GlassSurface(
         modifier
             .alpha(MIRROR_ALPHA)
             .testTag("opponent-mirror")
-            .semantics { contentDescription = "$name's board, live" }
+            .semantics { contentDescription = if (draggable) "$name's board, live. Drag to move it." else "$name's board, live" }
             .border(3.dp, palette.opponentAccent, RoundedCornerShape(18.dp)),
         shape = RoundedCornerShape(18.dp),
         solid = true,
     ) {
-        Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.padding(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            if (draggable) Box(Modifier.align(Alignment.CenterHorizontally).size(width = 28.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(palette.text.copy(alpha = 0.6f)))
             BoardView(board, image, onTileTap = {}, interactive = false)
             Row {
                 Text(name, Modifier.weight(1f), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = palette.opponentAccent, maxLines = 1)

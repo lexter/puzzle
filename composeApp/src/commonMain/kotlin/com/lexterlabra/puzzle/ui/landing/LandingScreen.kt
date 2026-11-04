@@ -75,11 +75,11 @@ private val PreviewMine = PuzzleState(4, listOf(5, 1, 2, 4, 9, 6, 3, 8, 13, 10, 
 private val PreviewRival = PuzzleState(4, listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 10, 12, 13, 14, 11, 15))
 
 /**
- * Race-first landing: racing a friend nearby is the hero, "your photo, your puzzle" comes
- * next, and solo play is the quieter third option.
+ * Race-first landing that fits on one phone screen (it only scrolls in landscape or on very small windows): racing a friend nearby is the hero and solo play
+ * is the quieter second option. Photos are picked in the lobby or the solo game.
  */
 @Composable
-fun LandingScreen(onPlay: (Players, Mode) -> Unit, onLeaderboard: () -> Unit, onPhoto: (Mode) -> Unit = {}) {
+fun LandingScreen(onPlay: (Players, Mode) -> Unit, onLeaderboard: () -> Unit) {
     var mode by rememberSaveable { mutableStateOf(Mode.TIME_BASED) }
     val scenic = scenicImage()
     val palette = LocalPalette.current
@@ -104,8 +104,8 @@ fun LandingScreen(onPlay: (Players, Mode) -> Unit, onLeaderboard: () -> Unit, on
             )
 
             RaceCard(scenic) { onPlay(Players.P2P, mode) }
-            PhotoCard(scenic) { onPhoto(mode) }
             GlassButton("Play solo", onClick = { onPlay(Players.SINGLE, mode) }, icon = Icons.Rounded.Person)
+            Text("Pick your own photo in the lobby or before a solo game.", Modifier.fillMaxWidth(), fontSize = 13.sp, color = palette.secondaryText, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         }
     }
 }
@@ -156,7 +156,7 @@ private fun MiniBoard(state: PuzzleState, image: ImageBitmap, ring: Color, label
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Box(
             Modifier
-                .size(118.dp)
+                .size(132.dp)
                 .shadow(14.dp, RoundedCornerShape(16.dp), ambientColor = ring, spotColor = ring)
                 .clip(RoundedCornerShape(16.dp))
                 .background(LocalPalette.current.glassTintSolid)
@@ -166,51 +166,5 @@ private fun MiniBoard(state: PuzzleState, image: ImageBitmap, ring: Color, label
             BoardView(state, image, onTileTap = {}, interactive = false, modifier = Modifier.alpha(alpha))
         }
         Text(label, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = ring)
-    }
-}
-
-@Composable
-private fun PhotoCard(image: ImageBitmap, onPick: () -> Unit) {
-    val palette = LocalPalette.current
-    GlassSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(26.dp)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                PhotoStack(image)
-                Column(Modifier.weight(1f)) {
-                    Text("Your photo, your puzzle", style = DisplayStyle, fontSize = 18.sp, color = palette.text)
-                    Text("Snap your dog, your crew, tonight\u2019s dinner. We slice it into tiles.", fontSize = 14.sp, color = palette.secondaryText)
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                GlassButton("Camera", onClick = onPick, modifier = Modifier.weight(1f), icon = Icons.Rounded.PhotoCamera, iconTint = palette.accent)
-                GlassButton("Gallery", onClick = onPick, modifier = Modifier.weight(1f), icon = Icons.Rounded.PhotoLibrary, iconTint = palette.accent)
-            }
-        }
-    }
-}
-
-/** Three tilted snapshots; the front one shows the tile cuts. */
-@Composable
-private fun PhotoStack(image: ImageBitmap) {
-    Box(Modifier.size(width = 86.dp, height = 74.dp)) {
-        Snapshot(image, Modifier.offset(x = 0.dp, y = 12.dp).rotate(-12f), grid = false)
-        Snapshot(image, Modifier.offset(x = 16.dp, y = 4.dp).rotate(4f), grid = false)
-        Snapshot(image, Modifier.offset(x = 30.dp, y = 14.dp).rotate(14f), grid = true)
-    }
-}
-
-@Composable
-private fun Snapshot(image: ImageBitmap, modifier: Modifier, grid: Boolean) {
-    Box(modifier.size(52.dp).shadow(6.dp, RoundedCornerShape(10.dp)).clip(RoundedCornerShape(10.dp)).border(2.dp, Color.White, RoundedCornerShape(10.dp))) {
-        Image(image, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-        if (grid) {
-            Canvas(Modifier.fillMaxSize()) {
-                val cell = size.width / 4
-                for (i in 1 until 4) {
-                    drawLine(Color.White.copy(alpha = 0.85f), Offset(i * cell, 0f), Offset(i * cell, size.height), strokeWidth = 1.dp.toPx())
-                    drawLine(Color.White.copy(alpha = 0.85f), Offset(0f, i * cell), Offset(size.width, i * cell), strokeWidth = 1.dp.toPx())
-                }
-            }
-        }
     }
 }

@@ -34,14 +34,6 @@ class LandingScreenTest {
     }
 
     @Test
-    fun photoCardOpensMakeYourPuzzle() = runComposeUiTest {
-        var photoMode: Mode? = null
-        setContent { PuzzleTheme(Appearance.DARK) { LandingScreen(onPlay = { _, _ -> }, onLeaderboard = {}, onPhoto = { photoMode = it }) } }
-        onNodeWithText("Camera").performScrollTo().performClick()
-        assertEquals(Mode.TIME_BASED, photoMode)
-    }
-
-    @Test
     fun trophyOpensLeaderboard() = runComposeUiTest {
         var opened = false
         setContent { PuzzleTheme(Appearance.DARK) { LandingScreen(onPlay = { _, _ -> }, onLeaderboard = { opened = true }) } }

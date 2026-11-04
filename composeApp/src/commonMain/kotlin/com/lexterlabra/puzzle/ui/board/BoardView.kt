@@ -32,6 +32,7 @@ import kotlin.math.roundToInt
 
 private const val SLIDE_MILLIS = 160
 private val SMALL_BOARD = 200.dp
+private val TILE_CORNER = 2.dp
 
 /**
  * Square board. Each tile shows its home slice of [image] (which must be square) and
@@ -50,7 +51,7 @@ fun BoardView(
         val boardDp: Dp = min(maxWidth.value, maxHeight.value).dp
         val small = boardDp < SMALL_BOARD
         val gapDp = if (small) 2.dp else 4.dp
-        val corner = RoundedCornerShape(if (small) 3.dp else 8.dp)
+        val corner = RoundedCornerShape(TILE_CORNER)
         val density = LocalDensity.current
         val boardPx = with(density) { boardDp.toPx() }
         val gapPx = with(density) { gapDp.toPx() }
