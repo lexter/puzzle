@@ -36,7 +36,11 @@ expect fun openAppSettings()
 expect fun PlatformBackHandler(enabled: Boolean = true, onBack: () -> Unit)
 
 class Haptics(private val feedback: HapticFeedback) {
-    fun tap() = feedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+    /** Light impact for tapping or sliding a tile. */
+    fun tap() = feedback.performHapticFeedback(HapticFeedbackType.VirtualKey)
+
+    /** Softer tick for rapid, automatic tile moves such as the start-of-game shuffle. */
+    fun tick() = feedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
     fun success() = feedback.performHapticFeedback(HapticFeedbackType.LongPress)
 }
 

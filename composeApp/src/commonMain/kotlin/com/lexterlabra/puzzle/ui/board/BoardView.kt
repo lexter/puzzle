@@ -30,7 +30,7 @@ import com.lexterlabra.puzzle.game.PuzzleState
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-private const val SLIDE_MILLIS = 160
+const val SLIDE_MILLIS = 160
 private val SMALL_BOARD = 200.dp
 private val TILE_CORNER = 2.dp
 
@@ -45,6 +45,7 @@ fun BoardView(
     onTileTap: (tileId: Int) -> Unit,
     modifier: Modifier = Modifier,
     interactive: Boolean = true,
+    slideMillis: Int = SLIDE_MILLIS,
 ) {
     BoxWithConstraints(modifier.aspectRatio(1f)) {
         val n = state.size
@@ -66,8 +67,8 @@ fun BoardView(
                     ((index % n) * (tilePx + gapPx)).roundToInt(),
                     ((index / n) * (tilePx + gapPx)).roundToInt(),
                 )
-                val offset by animateIntOffsetAsState(target, tween(SLIDE_MILLIS), label = "tile-$id")
-                val home = id - 1
+                val offset by animateIntOffsetAsState(target, tween(slideMillis), label = "tile-$id")
+                val home = id
                 val srcLeft = ((home % n) * cell).toInt()
                 val srcTop = ((home / n) * cell).toInt()
                 val srcRight = (((home % n) + 1) * cell).toInt().coerceAtMost(image.width)

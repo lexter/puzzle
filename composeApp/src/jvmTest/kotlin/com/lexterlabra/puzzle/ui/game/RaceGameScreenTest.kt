@@ -44,7 +44,7 @@ class RaceGameScreenTest {
             PuzzleTheme(Appearance.DARK) { RaceGameScreen(controller, FakeSettingsStore(), onLeave = { left = true }) }
         }
         hostEnd.close()
-        waitUntil(3_000) { runCatching { onNodeWithText("Connection lost").assertIsDisplayed() }.isSuccess }
+        waitUntil(timeoutMillis = 3_000) { runCatching { onNodeWithText("Connection lost").assertIsDisplayed() }.isSuccess }
         onNodeWithText("Back to lobby").performClick()
         assertTrue(left)
     }

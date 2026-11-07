@@ -15,6 +15,8 @@ import com.lexterlabra.puzzle.image.PuzzleImage
 import com.lexterlabra.puzzle.platform.PickResult
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,7 +27,15 @@ import kotlinx.coroutines.withContext
 import kotlin.random.Random
 import kotlin.time.Clock
 
-enum class Phase { READY, PLAYING, WON }
+enum class Phase { READY, SHUFFLING, COUNTDOWN, PLAYING, WON }
+
+/** The visible scramble when a game starts: [SHUFFLE_STEPS] slides, one every [SHUFFLE_STEP_MS]. */
+const val SHUFFLE_STEP_MS = 100L
+const val SHUFFLE_STEPS = 50
+
+/** After the scramble, a 3-2-1 count runs before play (and the timer) starts. */
+const val COUNTDOWN_FROM = 3
+const val COUNTDOWN_STEP_MS = 1_000L
 
 sealed interface UserMessage {
     val text: String
@@ -45,6 +55,8 @@ data class GameUiState(
     val loadingPhoto: Boolean = false,
     val message: UserMessage? = null,
     val newBest: Boolean = false,
+    /** The number on screen during [Phase.COUNTDOWN]; 0 otherwise. */
+    val countdown: Int = 0,
 )
 
 class GameViewModel(
@@ -53,7 +65,8 @@ class GameViewModel(
     private val scores: ScoreStore,
     private val clock: GameClock = GameClock(),
     private val seedSource: () -> Long = { Random.nextLong() },
-    private val shuffler: (size: Int, seed: Long) -> PuzzleState = PuzzleEngine::shuffled,
+    /** Board frames played during the start-of-game scramble; the last one is the puzzle. */
+    private val shuffleFrames: (size: Int, seed: Long) -> List<PuzzleState> = { size, seed -> PuzzleEngine.shuffleWalk(size, seed, SHUFFLE_STEPS) },
     private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
     private val workDispatcher: CoroutineDispatcher = Dispatchers.Default,
     initialImage: ImageBitmap? = null,
@@ -61,6 +74,8 @@ class GameViewModel(
 
     private val _state = MutableStateFlow(GameUiState(PuzzleEngine.solved(PuzzleState.DEFAULT_SIZE), mode, customImage = initialImage))
     val state: StateFlow<GameUiState> = _state.asStateFlow()
+
+    private var shuffleJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -75,8 +90,20 @@ class GameViewModel(
     fun start() {
         val current = _state.value
         if (current.phase != Phase.READY) return
-        _state.update { it.copy(puzzle = shuffler(current.puzzle.size, seedSource()).copy(moves = 0), phase = Phase.PLAYING, newBest = false) }
-        if (mode == Mode.TIME_BASED) clock.start() else clock.reset()
+        val frames = shuffleFrames(current.puzzle.size, seedSource())
+        _state.update { it.copy(phase = Phase.SHUFFLING, newBest = false) }
+        shuffleJob = viewModelScope.launch {
+            for (frame in frames) {
+                _state.update { it.copy(puzzle = frame.copy(moves = 0)) }
+                delay(SHUFFLE_STEP_MS)
+            }
+            for (count in COUNTDOWN_FROM downTo 1) {
+                _state.update { it.copy(phase = Phase.COUNTDOWN, countdown = count) }
+                delay(COUNTDOWN_STEP_MS)
+            }
+            _state.update { it.copy(phase = Phase.PLAYING, countdown = 0) }
+            if (mode == Mode.TIME_BASED) clock.start() else clock.reset()
+        }
     }
 
     fun tapTile(tileId: Int) {
@@ -145,7 +172,9 @@ class GameViewModel(
     fun playAgain() = resetTo(_state.value.puzzle.size)
 
     private fun resetTo(size: Int) {
+        shuffleJob?.cancel()
+        shuffleJob = null
         clock.reset()
-        _state.update { it.copy(puzzle = PuzzleEngine.solved(size), phase = Phase.READY, elapsedMs = 0L, pausedHidden = false, newBest = false) }
+        _state.update { it.copy(puzzle = PuzzleEngine.solved(size), phase = Phase.READY, elapsedMs = 0L, pausedHidden = false, newBest = false, countdown = 0) }
     }
 }

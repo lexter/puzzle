@@ -1,6 +1,17 @@
 package com.lexterlabra.puzzle.ui.game
 
 import androidx.compose.foundation.border
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.platform.testTag
+import com.lexterlabra.puzzle.ui.theme.CandyCta
+import com.lexterlabra.puzzle.ui.theme.DisplayStyle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.layout.Box
@@ -49,6 +60,7 @@ import com.lexterlabra.puzzle.platform.openAppSettings
 import com.lexterlabra.puzzle.platform.rememberHaptics
 import com.lexterlabra.puzzle.platform.rememberImagePicker
 import com.lexterlabra.puzzle.ui.board.BoardView
+import com.lexterlabra.puzzle.ui.board.SLIDE_MILLIS
 import com.lexterlabra.puzzle.ui.components.PrimaryButton
 import com.lexterlabra.puzzle.ui.components.ScreenScaffold
 import com.lexterlabra.puzzle.ui.components.SectionLabel
@@ -87,6 +99,8 @@ fun GameScreen(viewModel: GameViewModel, settings: SettingsStore, onBack: () -> 
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { viewModel.onBackground() }
     LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.onForeground() }
     LaunchedEffect(state.phase) { if (state.phase == Phase.WON) haptics.success() }
+    LaunchedEffect(state.puzzle.tiles) { if (state.phase == Phase.SHUFFLING) haptics.tick() }
+    LaunchedEffect(state.countdown) { if (state.countdown > 0) haptics.tap() }
     LaunchedEffect(state.message) {
         if (state.message != null) {
             delay(MESSAGE_MS)
@@ -98,7 +112,7 @@ fun GameScreen(viewModel: GameViewModel, settings: SettingsStore, onBack: () -> 
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val layout = layoutModeFor(maxWidth.value.toInt(), maxHeight.value.toInt(), rememberFoldInfo())
             val timerText = if (state.mode == Mode.TIME_BASED) formatElapsed(elapsed) else null
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 GameTopBar(onBack, timerText, onSettings = { showSettings = true })
                 val board: @Composable (Modifier) -> Unit = { modifier ->
                     GameBoard(state, image, modifier) { id ->
@@ -117,6 +131,20 @@ fun GameScreen(viewModel: GameViewModel, settings: SettingsStore, onBack: () -> 
                             onGallery = picker::pickFromGallery,
                         )
                         PrimaryButton("Start", onClick = viewModel::start, icon = Icons.Rounded.PlayArrow, enabled = !state.loadingPhoto)
+                    } else if (state.phase == Phase.SHUFFLING) {
+                        Text(
+                            "Shuffling…",
+                            Modifier.padding(horizontal = 6.dp),
+                            fontSize = 13.sp,
+                            color = LocalPalette.current.secondaryText,
+                        )
+                    } else if (state.phase == Phase.COUNTDOWN) {
+                        Text(
+                            "Get ready…",
+                            Modifier.padding(horizontal = 6.dp),
+                            fontSize = 13.sp,
+                            color = LocalPalette.current.secondaryText,
+                        )
                     } else if (state.phase == Phase.PLAYING) {
                         Text(
                             "Tap any tile in the gap's row or column to slide it.",
@@ -127,12 +155,13 @@ fun GameScreen(viewModel: GameViewModel, settings: SettingsStore, onBack: () -> 
                     }
                 }
                 if (layout == LayoutMode.COMPACT) {
-                    Column(Modifier.widthIn(max = 640.dp).align(Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        board(Modifier.weight(1f, fill = false).align(Alignment.CenterHorizontally))
+                    Column(Modifier.widthIn(max = 640.dp).weight(1f).align(Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        // The board takes the leftover height and sits centred in it.
+                        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { board(Modifier) }
                         controls()
                     }
                 } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+                    Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(28.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) { board(Modifier) }
                         Column(Modifier.width(360.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp), content = controls)
                     }
@@ -197,12 +226,19 @@ private fun GameBoard(state: GameUiState, image: ImageBitmap, modifier: Modifier
         shape = RoundedCornerShape(28.dp),
     ) {
         Box(Modifier.padding(12.dp)) {
-            BoardView(state.puzzle, image, onTileTap = onTap, interactive = state.phase == Phase.PLAYING)
+            BoardView(
+                state.puzzle,
+                image,
+                onTileTap = onTap,
+                interactive = state.phase == Phase.PLAYING,
+                slideMillis = if (state.phase == Phase.SHUFFLING) SHUFFLE_STEP_MS.toInt() - 10 else SLIDE_MILLIS,
+            )
             if (state.pausedHidden) {
                 GlassSurface(Modifier.matchParentSize(), shape = RoundedCornerShape(16.dp), solid = true) {
                     Text("Paused", Modifier.align(Alignment.Center), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = LocalPalette.current.text)
                 }
             }
+            if (state.phase == Phase.COUNTDOWN) Countdown(state.countdown, Modifier.matchParentSize())
         }
     }
 }
@@ -215,6 +251,27 @@ fun PictureRow(customSelected: Boolean, cameraAvailable: Boolean, onScenic: () -
             PictureChip(Icons.Rounded.Landscape, "Scenic", selected = !customSelected, enabled = true, Modifier.weight(1f), onScenic)
             PictureChip(Icons.Rounded.PhotoCamera, "Camera", selected = false, enabled = cameraAvailable, Modifier.weight(1f), onCamera)
             PictureChip(Icons.Rounded.PhotoLibrary, "Gallery", selected = customSelected, enabled = true, Modifier.weight(1f), onGallery)
+        }
+    }
+}
+
+/** The 3-2-1 shown over the scrambled board; each number pops in and fades out. */
+@Composable
+private fun Countdown(count: Int, modifier: Modifier) {
+    Box(modifier.testTag("countdown"), contentAlignment = Alignment.Center) {
+        AnimatedContent(
+            targetState = count,
+            transitionSpec = { (scaleIn(initialScale = 1.6f) + fadeIn()) togetherWith (scaleOut(targetScale = 0.6f) + fadeOut()) },
+            label = "countdown",
+        ) { number ->
+            GlassSurface(Modifier.size(132.dp), shape = CircleShape, solid = true) {
+                Text(
+                    "$number",
+                    Modifier.align(Alignment.Center),
+                    style = DisplayStyle.copy(brush = CandyCta.titleBrush),
+                    fontSize = 72.sp,
+                )
+            }
         }
     }
 }

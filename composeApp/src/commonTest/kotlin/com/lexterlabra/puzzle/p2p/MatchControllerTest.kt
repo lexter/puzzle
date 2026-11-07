@@ -32,8 +32,8 @@ class MatchControllerTest {
 
     /** Puts [controller] one move from solved, then makes that move. */
     private fun solve(controller: MatchController) {
-        controller.debugSetBoard(PuzzleEngine.slide(PuzzleEngine.solved(4), 14))
-        controller.tapTile(15)
+        controller.debugSetBoard(PuzzleEngine.slide(PuzzleEngine.solved(4), 1))
+        controller.tapTile(1)
     }
 
     private fun TestScope.raceStarted(): Pair<MatchController, MatchController> {
@@ -129,8 +129,8 @@ class MatchControllerTest {
     @Test
     fun guestCannotMoveAfterSolving() = runTest {
         val (_, guest) = raceStarted()
-        guest.debugSetBoard(PuzzleEngine.slide(PuzzleEngine.solved(4), 14))
-        guest.tapTile(15)
+        guest.debugSetBoard(PuzzleEngine.slide(PuzzleEngine.solved(4), 1))
+        guest.tapTile(1)
         val solved = guest.state.value.me
         guest.tapTile(12)
         assertEquals(solved, guest.state.value.me)

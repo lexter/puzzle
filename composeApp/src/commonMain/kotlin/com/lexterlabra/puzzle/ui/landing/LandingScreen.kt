@@ -72,7 +72,7 @@ import com.lexterlabra.puzzle.ui.theme.DisplayStyle
 import com.lexterlabra.puzzle.ui.theme.LocalPalette
 
 private val PreviewMine = PuzzleState(4, listOf(5, 1, 2, 4, 9, 6, 3, 8, 13, 10, 7, 11, 0, 14, 15, 12))
-private val PreviewRival = PuzzleState(4, listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 10, 12, 13, 14, 11, 15))
+private val PreviewRival = PuzzleState(4, listOf(1, 2, 3, 0, 4, 5, 6, 7, 8, 9, 11, 10, 12, 13, 14, 15))
 
 /**
  * Race-first landing that fits on one phone screen (it only scrolls in landscape or on very small windows): racing a friend nearby is the hero and solo play

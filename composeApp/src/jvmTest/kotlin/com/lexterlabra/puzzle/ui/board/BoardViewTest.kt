@@ -26,11 +26,11 @@ class BoardViewTest {
             BoardView(state, image, onTileTap = { state = PuzzleEngine.slideTile(state, it) }, modifier = Modifier.size(320.dp))
         }
         mainClock.autoAdvance = false
-        onNodeWithTag("tile-15").performClick()
-        onNodeWithTag("tile-14").performClick()
+        onNodeWithTag("tile-1").performClick()
+        onNodeWithTag("tile-2").performClick()
         mainClock.autoAdvance = true
         waitForIdle()
-        val expected = PuzzleEngine.slide(PuzzleEngine.slide(PuzzleEngine.solved(4), 14), 13)
+        val expected = PuzzleEngine.slide(PuzzleEngine.slide(PuzzleEngine.solved(4), 1), 2)
         assertEquals(expected.tiles, state.tiles)
         val bounds = (1..15).map { onNodeWithTag("tile-$it").fetchSemanticsNode().boundsInRoot }
         assertEquals(15, bounds.toSet().size)
@@ -42,7 +42,7 @@ class BoardViewTest {
         setContent {
             BoardView(PuzzleEngine.solved(4), image, onTileTap = { taps++ }, modifier = Modifier.size(120.dp), interactive = false)
         }
-        onNodeWithTag("tile-15").performClick()
+        onNodeWithTag("tile-1").performClick()
         assertEquals(0, taps)
     }
 }
