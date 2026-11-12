@@ -49,6 +49,7 @@ class GameViewModelTest {
         )
 
     @BeforeTest fun setUp() = Dispatchers.setMain(dispatcher)
+
     @AfterTest fun tearDown() = Dispatchers.resetMain()
 
     @Test

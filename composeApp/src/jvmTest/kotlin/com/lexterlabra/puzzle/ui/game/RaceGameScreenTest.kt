@@ -1,5 +1,7 @@
 package com.lexterlabra.puzzle.ui.game
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
@@ -7,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.unit.dp
 import com.lexterlabra.puzzle.data.Appearance
 import com.lexterlabra.puzzle.fakes.FakeConnection
 import com.lexterlabra.puzzle.fakes.FakeSettingsStore
@@ -26,7 +29,8 @@ class RaceGameScreenTest {
     fun mirrorIsShownAndNotTappable() = runComposeUiTest {
         setContent {
             PuzzleTheme(Appearance.LIGHT) {
-                OpponentMirror(PuzzleEngine.solved(4), ImageBitmap(200, 200), "Mia")
+                // Sized like the app sizes it (the side panel caps its width).
+                OpponentMirror(PuzzleEngine.solved(4), ImageBitmap(200, 200), "Mia", Modifier.width(160.dp))
             }
         }
         onNodeWithTag("opponent-mirror").assertIsDisplayed()

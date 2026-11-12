@@ -1,5 +1,6 @@
 import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -7,6 +8,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.ktlint)
 }
 
 kotlin {
@@ -62,11 +64,24 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
         }
+        androidInstrumentedTest.dependencies {
+            implementation(libs.androidx.test.runner)
+            implementation(libs.androidx.test.ext.junit)
+            implementation(libs.androidx.compose.ui.test.junit4)
+            // Compose ui-test pulls Espresso 3.5, which calls InputManager.getInstance() and crashes on API 37.
+            implementation(libs.androidx.test.espresso.core)
+        }
         jvmTest.dependencies {
             @OptIn(ExperimentalComposeLibrary::class)
             implementation(compose.uiTest)
         }
     }
+}
+
+// commonTest also runs on an iOS simulator (iosSimulatorArm64Test). CI passes
+// -PiosSimulator=<UDID> to pick the newest simulator; otherwise Kotlin's default device is used.
+tasks.withType<KotlinNativeSimulatorTest>().configureEach {
+    providers.gradleProperty("iosSimulator").orNull?.let { device.set(it) }
 }
 
 compose.resources {
@@ -83,17 +98,48 @@ android {
         applicationId = "com.lexterlabra.puzzle"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
+        // CI passes -PversionCode=<run number> so every distributed build installs over the last.
+        versionCode = providers.gradleProperty("versionCode").map(String::toInt).getOrElse(1)
         versionName = "1.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+    // Release signing comes from the environment (CI secrets); without it, release builds are unsigned.
+    val releaseKeystore = providers.environmentVariable("ANDROID_KEYSTORE_PATH")
+    signingConfigs {
+        if (releaseKeystore.isPresent) {
+            create("release") {
+                storeFile = file(releaseKeystore.get())
+                storePassword = providers.environmentVariable("ANDROID_KEYSTORE_PASSWORD").get()
+                keyAlias = providers.environmentVariable("ANDROID_KEY_ALIAS").get()
+                keyPassword = providers.environmentVariable("ANDROID_KEY_PASSWORD").get()
+            }
+        }
     }
     packaging {
         resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" }
     }
     buildTypes {
-        getByName("release") { isMinifyEnabled = false }
+        getByName("release") {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release")
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    lint {
+        // Security checks fail the build instead of warning (CI runs lintDebug).
+        error += setOf(
+            "AllowAllHostnameVerifier", "BadHostnameVerifier", "TrustAllX509TrustManager", "SSLCertificateSocketFactoryGetInsecure",
+            "SSLCertificateSocketFactoryCreateSocket", "InsecureBaseConfiguration", "AcceptsUserCertificates", "HardcodedDebugMode",
+            "SetJavaScriptEnabled", "AddJavascriptInterface", "ExportedContentProvider", "ExportedReceiver", "ExportedService",
+            "ExportedPreferenceActivity", "GrantAllUris", "UnsafeIntentLaunch", "UnsafeProtectedBroadcastReceiver",
+            "WorldReadableFiles", "WorldWriteableFiles", "SecureRandom", "GetInstance", "PackageManagerGetSignatures", "LogConditional",
+        )
+    }
+}
+
+dependencies {
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

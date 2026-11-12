@@ -12,6 +12,7 @@ class FakeConnection : PeerConnection {
     private val inbox = Channel<Frame>(Channel.UNLIMITED)
     var peer: FakeConnection? = null
     val sent = mutableListOf<Frame>()
+
     /** When true, frames to the peer are silently dropped (simulates a dead link). */
     var dropOutgoing = false
 

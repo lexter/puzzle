@@ -1,0 +1,14 @@
+---
+# mobsfscan settings for CI (`mobsfscan --exit-warning .`). Each ignored rule says why it doesn't apply.
+- ignore-paths:
+    - build
+    - composeApp/build
+    - .gradle
+    - .kotlin
+  ignore-rules:
+    # Backups hold only the player name and scores and go to the user's own Google account backup;
+    # photos live in cacheDir, which is never backed up.
+    - android_manifest_allow_backup
+    # StrandHogg 2.0 is fixed by the platform for targetSdk >= 29. This rule only reads the manifest,
+    # but targetSdk (36) is set in composeApp/build.gradle.kts.
+    - android_task_hijacking2

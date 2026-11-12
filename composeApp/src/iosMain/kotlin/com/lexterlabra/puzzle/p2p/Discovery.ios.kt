@@ -1,10 +1,10 @@
 package com.lexterlabra.puzzle.p2p
 
+import com.lexterlabra.puzzle.platform.toByteArray
 import kotlinx.cinterop.ObjCSignatureOverride
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import com.lexterlabra.puzzle.platform.toByteArray
 import platform.Foundation.NSData
 import platform.Foundation.NSNetService
 import platform.Foundation.NSNetServiceBrowser

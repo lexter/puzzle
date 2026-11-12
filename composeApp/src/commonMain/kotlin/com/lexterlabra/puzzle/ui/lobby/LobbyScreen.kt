@@ -6,17 +6,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import com.lexterlabra.puzzle.ui.components.Avatar
-import com.lexterlabra.puzzle.ui.theme.CandyCta
-import com.lexterlabra.puzzle.ui.theme.DisplayStyle
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,11 +16,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -49,10 +39,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -64,6 +60,7 @@ import com.lexterlabra.puzzle.p2p.FoundHost
 import com.lexterlabra.puzzle.p2p.MatchPhase
 import com.lexterlabra.puzzle.platform.openAppSettings
 import com.lexterlabra.puzzle.platform.rememberImagePicker
+import com.lexterlabra.puzzle.ui.components.Avatar
 import com.lexterlabra.puzzle.ui.components.GlassButton
 import com.lexterlabra.puzzle.ui.components.GlassIconButton
 import com.lexterlabra.puzzle.ui.components.PrimaryButton
@@ -75,6 +72,8 @@ import com.lexterlabra.puzzle.ui.components.scenicImage
 import com.lexterlabra.puzzle.ui.game.MessageToast
 import com.lexterlabra.puzzle.ui.game.PictureChip
 import com.lexterlabra.puzzle.ui.game.UserMessage
+import com.lexterlabra.puzzle.ui.theme.CandyCta
+import com.lexterlabra.puzzle.ui.theme.DisplayStyle
 import com.lexterlabra.puzzle.ui.theme.LocalPalette
 import kotlinx.coroutines.delay
 

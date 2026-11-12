@@ -1,0 +1,43 @@
+# Lint rules for ktlint (run by the pre-commit hook and CI via `./gradlew ktlintCheck`).
+# Base style is IntelliJ IDEA's, which matches `kotlin.code.style=official`. Wrapping rules the
+# codebase doesn't follow (it favours dense one-line signatures and expressions) are turned off.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+
+[*.{kt,kts}]
+indent_size = 4
+indent_style = space
+max_line_length = 240
+ktlint_code_style = intellij_idea
+ktlint_function_naming_ignore_when_annotated_with = Composable
+ktlint_standard_function-signature = disabled
+ktlint_standard_class-signature = disabled
+ktlint_standard_multiline-expression-wrapping = disabled
+ktlint_standard_statement-wrapping = disabled
+ktlint_standard_parameter-list-wrapping = disabled
+ktlint_standard_argument-list-wrapping = disabled
+ktlint_standard_function-literal = disabled
+ktlint_standard_wrapping = disabled
+ktlint_standard_chain-method-continuation = disabled
+ktlint_standard_if-else-wrapping = disabled
+ktlint_standard_multiline-if-else = disabled
+ktlint_standard_if-else-bracing = disabled
+ktlint_standard_multiline-loop = disabled
+ktlint_standard_enum-wrapping = disabled
+ktlint_standard_condition-wrapping = disabled
+ktlint_standard_trailing-comma-on-call-site = disabled
+ktlint_standard_trailing-comma-on-declaration-site = disabled
+ktlint_standard_backing-property-naming = disabled
+ktlint_standard_property-naming = disabled
+ktlint_standard_function-expression-body = disabled
+ktlint_standard_blank-line-between-when-conditions = disabled
+ktlint_standard_annotation = disabled
+ktlint_standard_binary-expression-wrapping = disabled
+
+# Generated sources (Compose resource accessors) aren't ours to format.
+[**/build/generated/**]
+ktlint_standard = disabled

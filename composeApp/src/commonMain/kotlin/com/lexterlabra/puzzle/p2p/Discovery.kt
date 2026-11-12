@@ -9,6 +9,7 @@ data class FoundHost(val id: String, val name: String, val host: String, val por
 expect class Discovery() {
     fun advertise(name: String, port: Int)
     fun stopAdvertising()
+
     /** Current list of hosts; browsing stops when collection stops. */
     fun browse(): Flow<List<FoundHost>>
 }

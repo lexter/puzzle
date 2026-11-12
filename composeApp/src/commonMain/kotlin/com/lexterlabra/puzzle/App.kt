@@ -2,10 +2,10 @@ package com.lexterlabra.puzzle
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lexterlabra.puzzle.data.Appearance
@@ -17,20 +17,20 @@ import com.lexterlabra.puzzle.data.createDataStore
 import com.lexterlabra.puzzle.game.Mode
 import com.lexterlabra.puzzle.game.Players
 import com.lexterlabra.puzzle.image.PhotoSelection
-import com.lexterlabra.puzzle.ui.photo.PhotoScreen
-import com.lexterlabra.puzzle.ui.photo.PhotoViewModel
-import com.lexterlabra.puzzle.platform.PlatformBackHandler
 import com.lexterlabra.puzzle.p2p.MatchHub
+import com.lexterlabra.puzzle.platform.PlatformBackHandler
 import com.lexterlabra.puzzle.ui.game.GameScreen
-import com.lexterlabra.puzzle.ui.game.RaceGameScreen
-import com.lexterlabra.puzzle.ui.lobby.LobbyScreen
-import com.lexterlabra.puzzle.ui.lobby.LobbyViewModel
 import com.lexterlabra.puzzle.ui.game.GameViewModel
+import com.lexterlabra.puzzle.ui.game.RaceGameScreen
 import com.lexterlabra.puzzle.ui.landing.LandingScreen
 import com.lexterlabra.puzzle.ui.leaderboard.LeaderboardScreen
 import com.lexterlabra.puzzle.ui.leaderboard.LeaderboardViewModel
+import com.lexterlabra.puzzle.ui.lobby.LobbyScreen
+import com.lexterlabra.puzzle.ui.lobby.LobbyViewModel
 import com.lexterlabra.puzzle.ui.nav.Navigator
 import com.lexterlabra.puzzle.ui.nav.Screen
+import com.lexterlabra.puzzle.ui.photo.PhotoScreen
+import com.lexterlabra.puzzle.ui.photo.PhotoViewModel
 import com.lexterlabra.puzzle.ui.theme.PuzzleTheme
 
 const val APP_NAME = "Slide Puzzle"

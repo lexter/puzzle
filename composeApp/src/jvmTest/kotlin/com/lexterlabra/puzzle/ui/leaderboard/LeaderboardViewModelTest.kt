@@ -16,6 +16,7 @@ import kotlin.test.assertEquals
 @OptIn(ExperimentalCoroutinesApi::class)
 class LeaderboardViewModelTest {
     @BeforeTest fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
+
     @AfterTest fun tearDown() = Dispatchers.resetMain()
 
     @Test

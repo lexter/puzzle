@@ -195,7 +195,9 @@ class MatchController(
             is MatchConfig -> if (role == Role.GUEST) onConfig(message)
             MatchMessage.Ready -> if (role == Role.HOST) _state.update { it.copy(peerReady = true) }
             MatchMessage.ImageFailed -> if (role == Role.HOST) onImageFailed()
-            is MatchMessage.Start -> if (role == Role.GUEST && _state.value.phase == MatchPhase.CONFIGURED) beginCountdown(message.countdownMs)
+            is MatchMessage.Start -> if (role == Role.GUEST && _state.value.phase == MatchPhase.CONFIGURED) {
+                beginCountdown(message.countdownMs.coerceIn(0L, MatchMessage.MAX_COUNTDOWN_MS))
+            }
             is MatchMessage.Progress -> onProgress(message)
             is MatchMessage.Solved -> if (role == Role.HOST) decide(hostWon = false, winnerTimeMs = message.elapsedMs)
             is MatchMessage.Result -> if (role == Role.GUEST) finish(iWon = !message.winnerIsHost, winnerTimeMs = message.winnerTimeMs)
@@ -217,6 +219,7 @@ class MatchController(
     }
 
     private fun onConfig(config: MatchConfig) {
+        if (!config.isValid) return
         pendingConfig = config
         if (!config.customImage) markReady(config, null)
     }
@@ -246,7 +249,7 @@ class MatchController(
 
     private fun onProgress(progress: MatchMessage.Progress) {
         val grid = _state.value.config?.grid ?: return
-        val board = runCatching { PuzzleState(grid, progress.tiles, progress.moves) }.getOrNull() ?: return
+        val board = PuzzleState.fromPeer(grid, progress.tiles, progress.moves) ?: return
         _state.update { it.copy(opponent = board) }
     }
 

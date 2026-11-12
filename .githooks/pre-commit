@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Lint gate: ktlint when Kotlin files are staged, SwiftLint (strict) on staged Swift files, and the
+# privacy guard. Install with scripts/install-hooks.sh. Skip once with `git commit --no-verify`.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+kotlin=$(git diff --cached --name-only --diff-filter=ACMR -- '*.kt' '*.kts' '.editorconfig')
+if [[ -n $kotlin ]]; then
+  # ktlint checks the working tree. Refuse (rather than stash and risk the user's edits) when a
+  # staged file also has unstaged changes, so what's linted is exactly what's committed.
+  partial=$(comm -12 <(echo "$kotlin" | sort) <(git diff --name-only | sort))
+  if [[ -n $partial ]]; then
+    echo "pre-commit: these files have both staged and unstaged changes:" >&2
+    echo "$partial" | sed 's/^/  /' >&2
+    echo "pre-commit: stage them fully (git add) or stash the rest, then commit again." >&2
+    exit 1
+  fi
+  if ! ./gradlew --quiet :composeApp:ktlintCheck; then
+    echo "pre-commit: ktlint failed. Run ./gradlew :composeApp:ktlintFormat to fix most violations." >&2
+    exit 1
+  fi
+fi
+
+swift=()
+while IFS= read -r -d '' file; do
+  swift+=("$file")
+done < <(git diff --cached --name-only --diff-filter=ACMR -z -- '*.swift')
+if (( ${#swift[@]} )); then
+  if ! command -v swiftlint > /dev/null; then
+    echo "pre-commit: swiftlint not found. Install it with: brew install swiftlint" >&2
+    exit 1
+  fi
+  # Lint the staged content, not the working tree, so unstaged edits can't hide violations.
+  tmp=$(cd "$(mktemp -d)" && pwd -P)
+  trap 'rm -rf "$tmp"' EXIT
+  git checkout-index --prefix="$tmp/" -- "${swift[@]}"
+  cp .swiftlint.yml "$tmp/"
+  if ! output=$(cd "$tmp" && swiftlint lint --strict --quiet --config .swiftlint.yml -- "${swift[@]}" 2>&1); then
+    echo "${output//$tmp\//}" >&2
+    echo "pre-commit: SwiftLint failed. Fix the violations above (\`swiftlint --fix\` handles many)." >&2
+    exit 1
+  fi
+fi
+
+scripts/privacy-guard.sh > /dev/null

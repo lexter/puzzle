@@ -118,8 +118,8 @@ class MatchControllerTest {
     @Test
     fun nearSimultaneousSolveHasOneWinner() = runTest {
         val (host, guest) = raceStarted()
-        solve(guest)   // guest's Solved is queued, not yet delivered
-        solve(host)    // host solves in the same virtual millisecond
+        solve(guest) // guest's Solved is queued, not yet delivered
+        solve(host) // host solves in the same virtual millisecond
         runCurrent()
         val results = (host.state.value.result to guest.state.value.result)
         assertNotNull(results.first); assertNotNull(results.second)

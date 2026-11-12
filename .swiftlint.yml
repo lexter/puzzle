@@ -1,0 +1,18 @@
+# Lint rules for the iOS app shell (iosApp). The pre-commit hook and CI run
+# `swiftlint lint --strict`, so any violation (warning or error) blocks a commit.
+included:
+  - iosApp
+
+disabled_rules:
+  - trailing_comma
+
+type_name:
+  # The app entry point keeps the KMP template's name.
+  excluded:
+    - iOSApp
+
+line_length:
+  warning: 180
+  error: 220
+  ignores_comments: true
+  ignores_urls: true

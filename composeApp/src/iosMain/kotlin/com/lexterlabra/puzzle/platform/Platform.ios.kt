@@ -116,8 +116,12 @@ internal fun topViewController(): UIViewController? {
     return top
 }
 
+/**
+ * Default player name, advertised over Bonjour, so it must not identify the owner: the device model
+ * ("iPhone", "iPad"), never `UIDevice.name`, which on iOS 15 is the user-assigned name.
+ */
 actual object DeviceName {
-    actual fun get(): String = UIDevice.currentDevice.name
+    actual fun get(): String = UIDevice.currentDevice.model
 }
 
 actual val platformName: String = "ios"

@@ -1,28 +1,9 @@
 package com.lexterlabra.puzzle.ui.game
 
-import androidx.compose.foundation.background
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.offset
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
-import kotlin.math.roundToInt
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Bolt
-import androidx.compose.material3.Icon
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.liveRegion
-import com.lexterlabra.puzzle.ui.components.Avatar
-import com.lexterlabra.puzzle.ui.components.TugOfWar
-import com.lexterlabra.puzzle.ui.theme.CandyCta
-import com.lexterlabra.puzzle.ui.theme.DisplayStyle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -32,14 +13,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,12 +40,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lexterlabra.puzzle.data.Appearance
@@ -79,17 +74,21 @@ import com.lexterlabra.puzzle.p2p.MatchSnapshot
 import com.lexterlabra.puzzle.p2p.Role
 import com.lexterlabra.puzzle.platform.rememberHaptics
 import com.lexterlabra.puzzle.ui.board.BoardView
+import com.lexterlabra.puzzle.ui.components.Avatar
 import com.lexterlabra.puzzle.ui.components.PrimaryButton
-import com.lexterlabra.puzzle.ui.components.ProgressTrack
 import com.lexterlabra.puzzle.ui.components.ScreenScaffold
+import com.lexterlabra.puzzle.ui.components.TugOfWar
 import com.lexterlabra.puzzle.ui.components.scenicImage
 import com.lexterlabra.puzzle.ui.layout.LayoutMode
 import com.lexterlabra.puzzle.ui.layout.layoutModeFor
 import com.lexterlabra.puzzle.ui.layout.rememberFoldInfo
+import com.lexterlabra.puzzle.ui.theme.CandyCta
+import com.lexterlabra.puzzle.ui.theme.DisplayStyle
 import com.lexterlabra.puzzle.ui.theme.LocalPalette
 import com.lexterlabra.puzzle.ui.theme.TabularNumbers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 const val MIRROR_ALPHA = 0.7f
 private val MIRROR_MAX_SIDE_PANEL = 200.dp
@@ -223,7 +222,7 @@ fun RaceGameScreen(controller: MatchController, settings: SettingsStore, onLeave
         celebrate = result?.iWon == true,
         lines = listOfNotNull(
             result?.let { if (timed) "Winning time ${formatElapsed(it.winnerTimeMs)}" else null },
-            "${myBoard.moves} moves · ${grid}×$grid",
+            "${myBoard.moves} moves · $grid×$grid",
         ),
         highlight = null,
         primaryLabel = if (controller.role == Role.HOST) "Rematch" else "Ask for rematch",
@@ -287,7 +286,7 @@ private fun StatusLine(peer: String, match: MatchSnapshot, grid: Int) {
             if (connected) "  Connected · $peer" else "  Offline · solo",
             Modifier.weight(1f), fontSize = 14.sp, color = palette.secondaryText,
         )
-        Text("${grid}×$grid · Moves ${match.me?.moves ?: 0}", style = TabularNumbers.copy(fontWeight = FontWeight.Normal), fontSize = 14.sp, color = palette.secondaryText)
+        Text("$grid×$grid · Moves ${match.me?.moves ?: 0}", style = TabularNumbers.copy(fontWeight = FontWeight.Normal), fontSize = 14.sp, color = palette.secondaryText)
     }
 }
 

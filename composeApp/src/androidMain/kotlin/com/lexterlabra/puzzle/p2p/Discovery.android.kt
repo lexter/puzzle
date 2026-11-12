@@ -7,7 +7,6 @@ import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.net.wifi.WifiManager
 import android.os.Build
-import java.net.Inet4Address
 import com.lexterlabra.puzzle.platform.AndroidAppContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
@@ -15,6 +14,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import java.net.Inet4Address
 import kotlin.coroutines.resume
 
 /** Hosts listen on IPv4, so dial an IPv4 address when NSD offers one. */

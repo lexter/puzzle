@@ -58,6 +58,7 @@ object CandyCta {
     val bottom = Color(0xFFFF6A3D)
     val base = Color(0xFFC23A1C)
     val brush: Brush get() = Brush.verticalGradient(listOf(top, bottom))
+
     /** Text gradient for big celebratory titles. */
     val titleBrush: Brush get() = Brush.linearGradient(listOf(Color(0xFF4FD1FF), Color(0xFFFFB3D9), Color(0xFFFF8A3D)))
 }

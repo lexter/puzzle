@@ -1,6 +1,7 @@
 package com.lexterlabra.puzzle.p2p
 
 import com.lexterlabra.puzzle.game.Mode
+import com.lexterlabra.puzzle.game.PuzzleState
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -14,7 +15,10 @@ sealed interface MatchMessage {
 
     /** [imageBytes] > 0 means an [Frame.Image] with the host's photo follows. */
     @Serializable @SerialName("config")
-    data class MatchConfig(val grid: Int, val seed: Long, val mode: Mode, val customImage: Boolean, val imageBytes: Int) : MatchMessage
+    data class MatchConfig(val grid: Int, val seed: Long, val mode: Mode, val customImage: Boolean, val imageBytes: Int) : MatchMessage {
+        /** False for a config from a peer that would produce a board this app can't build. */
+        val isValid: Boolean get() = grid in PuzzleState.MIN_SIZE..PuzzleState.MAX_SIZE
+    }
 
     @Serializable @SerialName("ready")
     data object Ready : MatchMessage
@@ -45,6 +49,9 @@ sealed interface MatchMessage {
 
     companion object {
         const val COUNTDOWN_MS = 3_000L
+
+        /** Longest countdown a guest will honour; a peer's [Start] is clamped to `0..MAX_COUNTDOWN_MS`. */
+        const val MAX_COUNTDOWN_MS = 10_000L
     }
 }
 

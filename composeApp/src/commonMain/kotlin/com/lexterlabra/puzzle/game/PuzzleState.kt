@@ -19,5 +19,15 @@ data class PuzzleState(val size: Int, val tiles: List<Int>, val moves: Int = 0) 
         const val MIN_SIZE = 4
         const val MAX_SIZE = 10
         const val DEFAULT_SIZE = 4
+
+        /**
+         * A board received from a peer, or null if it isn't a valid one: [tiles] must hold each
+         * of `0 until size²` exactly once (the board view draws tiles by number).
+         */
+        fun fromPeer(size: Int, tiles: List<Int>, moves: Int): PuzzleState? {
+            if (size !in MIN_SIZE..MAX_SIZE || tiles.size != size * size) return null
+            if (tiles.sorted() != (0 until size * size).toList()) return null
+            return PuzzleState(size, tiles, moves)
+        }
     }
 }

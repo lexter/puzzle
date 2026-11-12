@@ -61,11 +61,12 @@ actual fun rememberImagePicker(onResult: (PickResult) -> Unit): ImagePicker {
     }
 }
 
+/**
+ * Default player name, advertised over mDNS, so it must not identify the owner: the device model
+ * (e.g. "Pixel 8"), never the user-assigned device name (e.g. "Jane's Pixel").
+ */
 actual object DeviceName {
-    actual fun get(): String {
-        val resolver = AndroidAppContext.get().contentResolver
-        return Settings.Global.getString(resolver, Settings.Global.DEVICE_NAME)?.takeIf { it.isNotBlank() } ?: Build.MODEL
-    }
+    actual fun get(): String = Build.MODEL
 }
 
 actual val platformName: String = "android"
